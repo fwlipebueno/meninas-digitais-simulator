@@ -1,4 +1,5 @@
 # Contribuição
+
 As tarefas são acompanhadas no Kanban do Trello. Combine o escopo com a equipe antes de iniciar.
 
 - Crie uma branch pequena e orientada à tarefa, como `feat/abrir-programa` ou `fix/foco-do-menu`.

@@ -3,11 +3,13 @@
 [![CI](https://github.com/fwlipebueno/meninas-digitais-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/fwlipebueno/meninas-digitais-simulator/actions/workflows/ci.yml)
 
 # Interactive Web Simulator for Basic Computer Skills
+
 A practice environment for participants in **Meninas Digitais UTFPR-CP**, an outreach project at UTFPR, Cornélio Procópio Campus. Primarily intended for girls aged 12–18, it helps build basic computer skills for activities such as Technovation Girls.
 
 The planned activities follow **instruction → participant action → validation → immediate feedback**, using temporary session data without changing real files, accounts or services.
 
 ## Current status
+
 Initial repository foundation, corresponding to **PB-04** in the schedule: development environment, tests and CI with artifact delivery. The web app presents the four modules, using the colors, layout and logo supplied in the validated prototype. **The activities are not implemented yet.**
 
 | Planned module     | Content                                                                            | Requirements        |
@@ -22,11 +24,13 @@ The API exposes only `GET /health`, returning `200` with `{"status":"ok"}`. Star
 The data model awaits the analysis and validation phase. There is no real authentication, personal data persistence, external integration or selected hosting provider.
 
 ### Development requirements
+
 Prototype validation on September 12, 2026 identified three changes for the activities: add a way to go back, highlight the shortcut control, and enable minimize, maximize and close in simulated Notepad.
 
 Development targets a maximum of **500 ms** for simple interactions (RNF-01) and **200 ms** for search and filter updates (RNF-02). Modules must provide fonts of at least 14px and adequate contrast (RNF-06), conflict-free shortcuts (RNF-08), clear, age-appropriate feedback (RNF-09) and masked simulated passwords (RNF-10). The current screen uses a 16px base font and visible keyboard focus; activity performance will be measured once implemented.
 
 ## Stack and structure
+
 React, TypeScript and Vite for the web; Node.js, TypeScript and Express for the API; PostgreSQL and Drizzle for the database; Zod for environment validation. Vitest and Playwright handle tests; Docker Compose provisions the database. The monorepo uses npm workspaces, Git and GitHub, with ESLint, Prettier and TypeScript strict mode.
 
 ```text
@@ -39,6 +43,7 @@ compose.yaml          Development PostgreSQL
 ```
 
 ## Local setup
+
 Requirements: **Node.js 24.x**, **npm 11.x**, Git and Docker with Compose v2 or later running. `.nvmrc` records the recommended and tested Node version (**24.21.0**), and `packageManager` in `package.json` records the npm version that generated the lockfile (**11.19.0**). Ports 5173, 3001 and 5432 must be available.
 
 ```sh
@@ -59,6 +64,7 @@ Open [localhost:5173](http://localhost:5173). The API responds at [localhost:300
 If the API fails to start, check the Docker service, ports and `DATABASE_URL`. You can run only the web interface with `npm run dev -w apps/web`, without the database.
 
 ### Environment variables
+
 The API reads the root `.env` in development and start scripts. Variables already defined in the process take precedence. Zod validates `PORT` and `DATABASE_URL` before connecting, without displaying credentials in errors. The web app receives no credentials and needs no variables at this stage.
 
 | Variable            | Purpose / example value                                                                             |
@@ -72,6 +78,7 @@ The API reads the root `.env` in development and start scripts. Variables alread
 When changing the user, password or database, update `DATABASE_URL` as well. The `POSTGRES_*` variables initialize a new volume; changing them does not update credentials in an existing volume. `.env` is not versioned.
 
 ## Commands and tests
+
 Run from the root:
 
 | Command             | Purpose                                                         |
@@ -97,14 +104,17 @@ npm run check
 On Linux, use `npx playwright install --with-deps chromium` to install system dependencies as well. The smoke test starts its server on port 4173 and checks the modules, their unavailable status, keyboard access, runtime errors and the absence of horizontal scrolling at two widths. Tests do not require a database and cover only the current foundation. The report is written to `playwright-report/`.
 
 ## CI and delivery
+
 The `CI` workflow runs `npm ci` and `npm run check` on pull requests and pushes to `main`. Tags matching `v*` undergo the same validation and publish `web-<tag>` and `api-<tag>` artifacts in the workflow itself. Smoke test failures retain the report for diagnosis.
 
 The web artifact contains static files. The API artifact includes compiled JavaScript, manifests, lockfile and an example environment. After extracting it, configure `.env` at the root and run `npm ci --workspace apps/api --omit=dev`, followed by `npm start -w apps/api`, with PostgreSQL accessible. It includes neither installed dependencies nor secrets. There is no automatic deployment: hosting selection remains for the deployment phase.
 
 ## Contributing
+
 Keep branches and PRs small, follow Conventional Commits for commit messages, and reference the requirement when applicable. Merging requires review and passing CI. See [CONTRIBUTING.md](CONTRIBUTING.md). Tasks are tracked in Trello.
 
 ## Team
+
 - Felipe de Almeida Bueno
 - Emmanuely Antonia Brandão
 - Samuel Ueno Fernandes
