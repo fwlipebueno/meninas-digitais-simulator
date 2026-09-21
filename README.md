@@ -10,7 +10,9 @@ As atividades previstas seguem **instrução → ação da participante → vali
 
 ## Estado atual
 
-Base inicial do repositório, correspondente à **PB-04** do cronograma: ambiente de desenvolvimento, testes e CI com entrega de artefatos. A interface web apresenta os quatro módulos, seguindo as cores, a organização e o logo do protótipo validado. **As atividades ainda não estão implementadas.**
+A fundação **PB-04** fornece o ambiente de desenvolvimento, testes e CI. O **Incremento 1 — Programas (RF-01 a RF-21)** permite abrir, fechar e alternar programas, com instruções, feedback, repetição e retorno à seleção. Os demais módulos continuam em desenvolvimento. A interface preserva as cores e o logo do protótipo validado.
+
+Os atalhos reservados do computador são ensinados por controles dentro da página. O estado das janelas é local e reiniciado ao trocar de método, repetir ou sair da atividade. O Bloco de Notas permite minimizar, maximizar, restaurar e fechar; não há edição ou salvamento de arquivos nesta etapa.
 
 | Módulo previsto           | Conteúdo                                                                                 | Requisitos    |
 | ------------------------- | ---------------------------------------------------------------------------------------- | ------------- |
@@ -27,7 +29,7 @@ O modelo de dados aguarda a etapa de análise e validação. Não há autentica�
 
 A validação do protótipo em 12/09/2026 identificou três ajustes para as atividades: incluir opção de retorno, destacar o controle de atalhos e habilitar minimizar, maximizar e fechar no Bloco de Notas simulado.
 
-O desenvolvimento considera como limites **500 ms** para interações simples (RNF-01) e **200 ms** para atualização de buscas e filtros (RNF-02). Os módulos devem oferecer fontes de pelo menos 14px e contraste adequado (RNF-06), atalhos sem conflitos (RNF-08), feedback claro e adequado ao público (RNF-09) e senhas simuladas mascaradas (RNF-10). A tela atual usa fonte base de 16px e foco de teclado visível; o desempenho das atividades será medido quando forem implementadas.
+O desenvolvimento considera como limites **500 ms** para interações simples (RNF-01) e **200 ms** para atualização de buscas e filtros (RNF-02). Os módulos devem oferecer fontes de pelo menos 14px e contraste adequado (RNF-06), atalhos sem conflitos (RNF-08), feedback claro e adequado ao público (RNF-09) e senhas simuladas mascaradas (RNF-10). A interface usa fonte base de 16px, textos auxiliares de pelo menos 14px e foco de teclado visível. Programas usa atualizações locais, sem atrasos artificiais; os testes validam comportamento, sem impor limites temporais dependentes da máquina.
 
 ## Stack e organização
 
@@ -35,9 +37,10 @@ React, TypeScript e Vite na web; Node.js, TypeScript e Express na API; PostgreSQ
 
 ```text
 apps/
-  web/                 Tela inicial em React e CSS próprio
+  web/                 Tela inicial e módulo Programas em React e CSS próprio
+    src/programs/      Navegação, estado das janelas e atividades Abrir/Fechar/Alternar
   api/                 Express, ambiente e conexão com o banco
-tests/e2e/             Smoke test da web compilada
+tests/e2e/             Tela inicial e fluxos de Programas na web compilada
 .github/workflows/     CI e entrega por tag
 compose.yaml          PostgreSQL de desenvolvimento
 ```
@@ -101,7 +104,7 @@ npx playwright install chromium
 npm run check
 ```
 
-Em Linux, use `npx playwright install --with-deps chromium` para instalar também as dependências do sistema. O smoke test inicia seu servidor na porta 4173 e verifica os módulos, a indicação de indisponibilidade, o acesso por teclado, erros de execução e ausência de rolagem horizontal em duas larguras. Os testes não exigem banco e cobrem somente a base atual. O relatório fica em `playwright-report/`.
+Em Linux, use `npx playwright install --with-deps chromium` para instalar também as dependências do sistema. Playwright inicia seu servidor na porta 4173 e verifica a tela inicial e os fluxos Abrir, Fechar e Alternar, incluindo teclado, retorno, repetição, confirmação de tarefa sem resposta e consistência entre janelas, tarefas e miniaturas. Os cenários rodam em desktop e em 390 × 844, sem exigir banco. As atualizações são locais e imediatas; não há testes de tempo dependentes da velocidade da máquina. O relatório fica em `playwright-report/`.
 
 ## CI e entrega
 
