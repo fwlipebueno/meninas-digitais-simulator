@@ -10,7 +10,9 @@ The planned activities follow **instruction → participant action → validatio
 
 ## Current status
 
-Initial repository foundation, corresponding to **PB-04** in the schedule: development environment, tests and CI with artifact delivery. The web app presents the four modules, using the colors, layout and logo supplied in the validated prototype. **The activities are not implemented yet.**
+The **PB-04** foundation provides the development environment, tests and CI. **Increment 1 — Programs (RF-01 through RF-21)** supports opening, closing and switching programs, with instructions, feedback, repetition and return to activity selection. The other modules remain in development. The interface preserves the validated prototype's colors and logo.
+
+Reserved computer shortcuts are taught through controls within the page. Window state is local and resets when changing methods, repeating or leaving an activity. Notepad supports minimizing, maximizing, restoring and closing; file editing and saving are outside this increment.
 
 | Planned module     | Content                                                                            | Requirements        |
 | ------------------ | ---------------------------------------------------------------------------------- | ------------------- |
@@ -27,7 +29,7 @@ The data model awaits the analysis and validation phase. There is no real authen
 
 Prototype validation on September 12, 2026 identified three changes for the activities: add a way to go back, highlight the shortcut control, and enable minimize, maximize and close in simulated Notepad.
 
-Development targets a maximum of **500 ms** for simple interactions (RNF-01) and **200 ms** for search and filter updates (RNF-02). Modules must provide fonts of at least 14px and adequate contrast (RNF-06), conflict-free shortcuts (RNF-08), clear, age-appropriate feedback (RNF-09) and masked simulated passwords (RNF-10). The current screen uses a 16px base font and visible keyboard focus; activity performance will be measured once implemented.
+Development targets a maximum of **500 ms** for simple interactions (RNF-01) and **200 ms** for search and filter updates (RNF-02). Modules must provide fonts of at least 14px and adequate contrast (RNF-06), conflict-free shortcuts (RNF-08), clear, age-appropriate feedback (RNF-09) and masked simulated passwords (RNF-10). The interface uses a 16px base font, supporting text of at least 14px and visible keyboard focus. Programs uses local updates without artificial delays; tests validate behavior without machine-dependent timing limits.
 
 ## Stack and structure
 
@@ -35,9 +37,10 @@ React, TypeScript and Vite for the web; Node.js, TypeScript and Express for the 
 
 ```text
 apps/
-  web/                 React home page and custom CSS
+  web/                 React home page and Programs module with custom CSS
+    src/programs/      Navigation, window state and Open/Close/Switch activities
   api/                 Express, environment and database connection
-tests/e2e/             Smoke test of the built web app
+tests/e2e/             Home page and Programs flows in the built web app
 .github/workflows/     CI and tag-based delivery
 compose.yaml          Development PostgreSQL
 ```
@@ -101,7 +104,7 @@ npx playwright install chromium
 npm run check
 ```
 
-On Linux, use `npx playwright install --with-deps chromium` to install system dependencies as well. The smoke test starts its server on port 4173 and checks the modules, their unavailable status, keyboard access, runtime errors and the absence of horizontal scrolling at two widths. Tests do not require a database and cover only the current foundation. The report is written to `playwright-report/`.
+On Linux, use `npx playwright install --with-deps chromium` to install system dependencies as well. Playwright starts its server on port 4173 and checks the home page and Open, Close and Switch flows, including keyboard access, return, repetition, confirmation for an unresponsive program and consistency between windows, tasks and previews. Scenarios run on desktop and at 390 × 844 without a database. Updates are immediate and local; tests do not rely on machine-dependent timing. The report is written to `playwright-report/`.
 
 ## CI and delivery
 

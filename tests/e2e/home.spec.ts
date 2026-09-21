@@ -19,7 +19,7 @@ test('apresenta os quatro módulos, seu estado e acesso por teclado', async ({
   }
   await expect(
     modules.getByText(
-      'As atividades ainda não estão disponíveis nesta versão.',
+      'Pratique em Programas. Os demais módulos estão em desenvolvimento.',
     ),
   ).toBeVisible();
   await expect(
