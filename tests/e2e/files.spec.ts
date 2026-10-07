@@ -141,6 +141,111 @@ test('Salvar como: cancelar preserva documento; confirmar salva conteúdo, local
   await expect(folder).toHaveCount(0);
 });
 
+test('Ctrl + S funciona desde o título e em toda a atividade, sem reiniciar o diálogo', async ({
+  page,
+}) => {
+  await start(page, 'Salvar um arquivo');
+  const title = page.getByRole('heading', {
+    name: 'Salvar um arquivo',
+    exact: true,
+  });
+  await expect(title).toBeFocused();
+  await page.keyboard.press('Control+s');
+  const dialog = page.getByRole('dialog', { name: 'Salvar como', exact: true });
+  const name = dialog.getByRole('textbox', { name: 'Nome do arquivo' });
+  await expect(dialog).toBeVisible();
+  await name.fill('rascunho.txt');
+  await dialog
+    .getByRole('combobox', { name: 'Local' })
+    .selectOption('Documentos');
+  await name.press('Control+s');
+  await expect(dialog).toHaveCount(1);
+  await expect(name).toHaveValue('rascunho.txt');
+  await expect(dialog.getByRole('combobox', { name: 'Local' })).toHaveValue(
+    'Documentos',
+  );
+  expect(
+    await name.evaluate((element) =>
+      element.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 's',
+          ctrlKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      ),
+    ),
+  ).toBe(false);
+  await dialog.getByRole('button', { name: 'Cancelar' }).click();
+
+  for (const control of [
+    page.getByText('Mostrar dica', { exact: true }),
+    page.getByRole('button', { name: 'Arquivo', exact: true }),
+    page.getByRole('textbox', { name: 'Conteúdo do Bloco de Notas' }),
+  ]) {
+    await control.focus();
+    await page.keyboard.press('Control+s');
+    await expect(dialog).toBeVisible();
+    await expect(name).toHaveValue('');
+    await dialog.getByRole('button', { name: 'Cancelar' }).click();
+  }
+
+  await title.focus();
+  expect(
+    await title.evaluate((element) =>
+      element.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 's',
+          ctrlKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      ),
+    ),
+  ).toBe(false);
+  await name.fill('ideias.txt');
+  await dialog.getByRole('button', { name: 'Salvar', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Conteúdo do Bloco de Notas' })
+    .fill('Alteração');
+  await title.focus();
+  await page.keyboard.press('Control+s');
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('status')).toHaveText('Salvo.');
+  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+  expect(
+    await page
+      .getByRole('heading', { name: 'Atividade concluída' })
+      .evaluate((element) =>
+        element.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 's',
+            ctrlKey: true,
+            bubbles: true,
+            cancelable: true,
+          }),
+        ),
+      ),
+  ).toBe(true);
+  await page.getByRole('button', { name: 'Voltar à seleção' }).click();
+  await page.getByRole('button', { name: /Criar um documento/ }).click();
+  expect(
+    await page
+      .getByRole('heading', { name: 'Criar um documento', exact: true })
+      .evaluate((element) =>
+        element.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 's',
+            ctrlKey: true,
+            bubbles: true,
+            cancelable: true,
+          }),
+        ),
+      ),
+  ).toBe(true);
+  await expect(dialog).toHaveCount(0);
+});
+
 for (const method of ['Salvar', 'Ctrl + S simulado', 'Ctrl + S físico']) {
   test(`Salvar: ${method} abre Salvar como na primeira vez e salva depois sem diálogo`, async ({
     page,
@@ -209,6 +314,10 @@ test('Renomear: clique direito e Enter alteram o nome; perda de foco também con
     .getByRole('button', { name: 'ideias.txt', exact: true })
     .click({ button: 'right' });
   const context = page.getByRole('group', { name: 'Menu de contexto' });
+  await expect(context.getByRole('button')).toHaveCount(1);
+  await expect(
+    context.getByRole('button', { name: 'Excluir', exact: true }),
+  ).toHaveCount(0);
   await expect(
     context.getByRole('button', { name: 'Renomear', exact: true }),
   ).toBeFocused();
@@ -257,6 +366,10 @@ test('Excluir: Não e Esc preservam o arquivo; Sim remove e repetição restaura
     exact: true,
   });
   await icon.click({ button: 'right' });
+  await expect(context.getByRole('button')).toHaveCount(1);
+  await expect(
+    context.getByRole('button', { name: 'Renomear', exact: true }),
+  ).toHaveCount(0);
   await context.getByRole('button', { name: 'Excluir', exact: true }).click();
   await expect(dialog).toContainText(
     'Deseja excluir ideias.txt da pasta simulada?',

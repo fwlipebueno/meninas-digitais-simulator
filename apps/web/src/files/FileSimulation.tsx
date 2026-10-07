@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { flushSync } from 'react-dom';
 import type { FileActivity } from './Files';
 
@@ -11,9 +11,11 @@ type Overlay =
 
 export function FileSimulation({
   activity,
+  activityRoot,
   onComplete,
 }: {
   activity: FileActivity;
+  activityRoot: RefObject<HTMLDivElement | null>;
   onComplete: (result: string) => void;
 }) {
   const editing = activity === 'create' || activity === 'save';
@@ -85,6 +87,19 @@ export function FileSimulation({
     dismiss();
   }
 
+  useEffect(() => {
+    if (activity !== 'save') return;
+    const root = activityRoot.current;
+    function handleSave(event: KeyboardEvent) {
+      if (event.ctrlKey && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        if (overlay?.kind !== 'save' && !event.repeat) save();
+      }
+    }
+    root?.addEventListener('keydown', handleSave);
+    return () => root?.removeEventListener('keydown', handleSave);
+  });
+
   const instruction =
     activity === 'create'
       ? 'Abra Arquivo > Novo. O documento deve ficar vazio, com o título Sem título.'
@@ -102,14 +117,6 @@ export function FileSimulation({
     <div
       className="scenario-grid"
       onKeyDown={(event) => {
-        if (
-          activity === 'save' &&
-          event.ctrlKey &&
-          event.key.toLowerCase() === 's'
-        ) {
-          event.preventDefault();
-          if (overlay?.kind !== 'save' && !event.repeat) save();
-        }
         if (
           event.key === 'Escape' &&
           overlay &&
@@ -308,17 +315,23 @@ export function FileSimulation({
                       role="group"
                       aria-label="Menu de contexto"
                     >
-                      <button
-                        ref={firstContextAction}
-                        onClick={() =>
-                          setOverlay({ kind: 'rename', name: file.name })
-                        }
-                      >
-                        Renomear
-                      </button>
-                      <button onClick={() => setOverlay({ kind: 'delete' })}>
-                        Excluir
-                      </button>
+                      {activity === 'rename' ? (
+                        <button
+                          ref={firstContextAction}
+                          onClick={() =>
+                            setOverlay({ kind: 'rename', name: file.name })
+                          }
+                        >
+                          Renomear
+                        </button>
+                      ) : (
+                        <button
+                          ref={firstContextAction}
+                          onClick={() => setOverlay({ kind: 'delete' })}
+                        >
+                          Excluir
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

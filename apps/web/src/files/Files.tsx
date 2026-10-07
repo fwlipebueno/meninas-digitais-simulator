@@ -25,12 +25,13 @@ export function Files({ onBack }: { onBack: () => void }) {
     result?: string;
   } | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
+  const activityRoot = useRef<HTMLDivElement>(null);
   useEffect(() => {
     heading.current?.focus();
   }, [screen?.activity, screen?.result]);
 
   return (
-    <div className="files-module">
+    <div ref={activityRoot} className="files-module">
       {screen?.result ? (
         <section className="completion">
           <p className="eyebrow">✓ Arquivos</p>
@@ -63,6 +64,7 @@ export function Files({ onBack }: { onBack: () => void }) {
             <FileSimulation
               key={screen.activity}
               activity={screen.activity}
+              activityRoot={activityRoot}
               onComplete={(result) => setScreen({ ...screen, result })}
             />
           ) : (
