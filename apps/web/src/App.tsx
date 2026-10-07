@@ -1,34 +1,39 @@
 import { useState } from 'react';
 import logo from './assets/meninas-digitais.png';
 import { Programs } from './programs/Programs';
+import { Files } from './files/Files';
 
 const modules = [
   {
+    id: 'programs',
     name: 'Programas',
     environment: 'Windows',
     description: 'Abrir, fechar e alternar entre programas e janelas.',
   },
   {
+    id: 'files',
     name: 'Arquivos',
     environment: 'Bloco de Notas',
     description: 'Criar, salvar, renomear e excluir arquivos.',
   },
   {
+    id: 'email',
     name: 'E-mail',
     environment: 'Gmail',
     description:
       'Criar uma conta, entrar, escrever e enviar mensagens em uma simulação.',
   },
   {
+    id: 'docs',
     name: 'Google Docs',
     environment: 'Editor de texto',
     description:
       'Conhecer a interface, formatar textos e praticar recursos de edição e colaboração.',
   },
-];
+] as const;
 
 export function App() {
-  const [programs, setPrograms] = useState(false);
+  const [module, setModule] = useState<'programs' | 'files' | null>(null);
   return (
     <>
       <a className="skip-link" href="#conteudo">
@@ -44,8 +49,10 @@ export function App() {
         <span>Simulador de informática básica</span>
       </header>
       <main id="conteudo" tabIndex={-1}>
-        {programs ? (
-          <Programs onBack={() => setPrograms(false)} />
+        {module === 'programs' ? (
+          <Programs onBack={() => setModule(null)} />
+        ) : module === 'files' ? (
+          <Files onBack={() => setModule(null)} />
         ) : (
           <>
             <div className="intro">
@@ -67,10 +74,10 @@ export function App() {
             <section aria-labelledby="modules-title">
               <div className="section-heading">
                 <h2 id="modules-title">Módulos de aprendizagem</h2>
-                <span className="status">Programas disponível</span>
+                <span className="status">Programas e Arquivos disponíveis</span>
               </div>
               <p className="availability">
-                Pratique em Programas. Os demais módulos estão em
+                Pratique em Programas e Arquivos. E-mail e Google Docs estão em
                 desenvolvimento.
               </p>
               <ul className="modules">
@@ -81,10 +88,10 @@ export function App() {
                     </span>
                     <div>
                       <h3>
-                        {index === 0 ? (
+                        {module.id === 'programs' || module.id === 'files' ? (
                           <button
                             className="module-link"
-                            onClick={() => setPrograms(true)}
+                            onClick={() => setModule(module.id)}
                           >
                             {module.name} <span aria-hidden="true">→</span>
                           </button>
