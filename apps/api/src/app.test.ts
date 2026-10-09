@@ -1,10 +1,12 @@
 import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
+import { Pool } from 'pg';
 import { expect, test } from 'vitest';
 import { createApp } from './app.ts';
 
 test('GET /health responde com o estado do processo em JSON', async () => {
-  const server = createApp().listen(0, '127.0.0.1');
+  const pool = new Pool();
+  const server = createApp(pool).listen(0, '127.0.0.1');
   try {
     await once(server, 'listening');
     const { port } = server.address() as AddressInfo;
@@ -16,5 +18,6 @@ test('GET /health responde com o estado do processo em JSON', async () => {
     await new Promise<void>((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
     });
+    await pool.end();
   }
 });

@@ -9,12 +9,14 @@
     "start": "node --env-file-if-exists=../../.env dist/server.js"
   },
   "dependencies": {
+    "cors": "2.8.6",
     "drizzle-orm": "0.45.2",
     "express": "5.2.1",
     "pg": "8.23.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@types/cors": "2.8.19",
     "@types/express": "5.0.6",
     "@types/pg": "8.23.1"
   }
