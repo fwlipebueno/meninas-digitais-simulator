@@ -10,9 +10,9 @@ As atividades previstas seguem **instrução → ação da participante → vali
 
 ## Estado atual
 
-A fundação **PB-04** fornece o ambiente de desenvolvimento, testes e CI. O **Incremento 1 — Programas (RF-01 a RF-21)** permite abrir, fechar e alternar programas, com instruções, feedback, repetição e retorno à seleção. Os demais módulos continuam em desenvolvimento. A interface preserva as cores e o logo do protótipo validado.
+A fundação **PB-04** fornece o ambiente de desenvolvimento, testes e CI. O **Incremento 1 — Programas (RF-01 a RF-21)** permite abrir, fechar e alternar programas, com instruções, feedback, repetição e retorno à seleção. O **Incremento 2 — Arquivos (RF-22 a RF-30)** está disponível para criar, salvar, renomear e excluir arquivos. E-mail e Google Docs continuam em desenvolvimento. A interface preserva as cores e o logo do protótipo validado.
 
-Os atalhos reservados do computador são ensinados por controles dentro da página. O estado das janelas é local e reiniciado ao trocar de método, repetir ou sair da atividade. O Bloco de Notas permite minimizar, maximizar, restaurar e fechar; não há edição ou salvamento de arquivos nesta etapa.
+Os atalhos reservados do computador são ensinados por controles dentro da página. O estado das janelas é local e reiniciado ao trocar de método, repetir ou sair da atividade. No módulo Programas, o Bloco de Notas permite minimizar, maximizar, restaurar e fechar. No módulo Arquivos, o documento e o arquivo salvo ficam somente no estado da atividade; repetir ou sair descarta esses dados. Não há gravação, download ou persistência de arquivos reais.
 
 | Módulo previsto           | Conteúdo                                                                                 | Requisitos    |
 | ------------------------- | ---------------------------------------------------------------------------------------- | ------------- |
@@ -29,7 +29,7 @@ O modelo de dados aguarda a etapa de análise e validação. Não há autentica�
 
 A validação do protótipo em 12/09/2026 identificou três ajustes para as atividades: incluir opção de retorno, destacar o controle de atalhos e habilitar minimizar, maximizar e fechar no Bloco de Notas simulado.
 
-O desenvolvimento considera como limites **500 ms** para interações simples (RNF-01) e **200 ms** para atualização de buscas e filtros (RNF-02). Os módulos devem oferecer fontes de pelo menos 14px e contraste adequado (RNF-06), atalhos sem conflitos (RNF-08), feedback claro e adequado ao público (RNF-09) e senhas simuladas mascaradas (RNF-10). A interface usa fonte base de 16px, textos auxiliares de pelo menos 14px e foco de teclado visível. Programas usa atualizações locais, sem atrasos artificiais; os testes validam comportamento, sem impor limites temporais dependentes da máquina.
+O desenvolvimento considera como limites **500 ms** para interações simples (RNF-01) e **500 ms** para atualização de buscas e filtros (RNF-02). Os módulos devem oferecer fontes de pelo menos 14px e contraste adequado (RNF-06), atalhos sem conflitos (RNF-08), feedback claro e adequado ao público (RNF-09) e senhas simuladas mascaradas (RNF-10). A interface usa fonte base de 16px, textos auxiliares de pelo menos 14px e foco de teclado visível. Programas e Arquivos usam atualizações locais, sem atrasos artificiais; os testes validam comportamento, sem impor limites temporais dependentes da máquina.
 
 ## Stack e organização
 
@@ -37,10 +37,11 @@ React, TypeScript e Vite na web; Node.js, TypeScript e Express na API; PostgreSQ
 
 ```text
 apps/
-  web/                 Tela inicial e módulo Programas em React e CSS próprio
+  web/                 Tela inicial e módulos Programas e Arquivos em React e CSS próprio
     src/programs/      Navegação, estado das janelas e atividades Abrir/Fechar/Alternar
+    src/files/         Navegação, documento e arquivo temporários; Criar/Salvar/Renomear/Excluir
   api/                 Express, ambiente e conexão com o banco
-tests/e2e/             Tela inicial e fluxos de Programas na web compilada
+tests/e2e/             Tela inicial e fluxos de Programas e Arquivos na web compilada
 .github/workflows/     CI e entrega por tag
 compose.yaml          PostgreSQL de desenvolvimento
 ```
@@ -104,7 +105,7 @@ npx playwright install chromium
 npm run check
 ```
 
-Em Linux, use `npx playwright install --with-deps chromium` para instalar também as dependências do sistema. Playwright inicia seu servidor na porta 4173 e verifica a tela inicial e os fluxos Abrir, Fechar e Alternar, incluindo teclado, retorno, repetição, confirmação de tarefa sem resposta e consistência entre janelas, tarefas e miniaturas. Os cenários rodam em desktop e em 390 × 844, sem exigir banco. As atualizações são locais e imediatas; não há testes de tempo dependentes da velocidade da máquina. O relatório fica em `playwright-report/`.
+Em Linux, use `npx playwright install --with-deps chromium` para instalar também as dependências do sistema. Playwright inicia seu servidor na porta 4173 e verifica a tela inicial, os fluxos Abrir, Fechar e Alternar e as atividades Criar, Salvar, Renomear e Excluir, incluindo teclado, retorno, repetição, confirmação de tarefa sem resposta e consistência entre janelas, tarefas e miniaturas. Os cenários rodam em desktop e em 390 × 844, sem exigir banco. As atualizações são locais e imediatas; não há testes de tempo dependentes da velocidade da máquina. O relatório fica em `playwright-report/`.
 
 ## CI e entrega
 
