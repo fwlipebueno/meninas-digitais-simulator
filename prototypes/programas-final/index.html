@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Protótipo — Módulo Programas concluído | Meninas Digitais</title>
+    <link rel="stylesheet" href="../../apps/web/src/styles.css" />
+    <link rel="stylesheet" href="../../apps/web/src/programs/programs.css" />
+    <link rel="stylesheet" href="./prototype.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+    <header class="topbar">
+      <img
+        src="../../apps/web/src/assets/meninas-digitais.png"
+        alt="Meninas Digitais UTFPR-CP"
+        width="116"
+        height="60"
+      />
+      <span>Simulador de informática básica</span>
+    </header>
+    <main id="conteudo" tabindex="-1">
+      <section
+        class="completion module-completion"
+        aria-labelledby="module-completion-title"
+      >
+        <p class="prototype-badge" role="note">Protótipo — tela em validação</p>
+        <p class="eyebrow">✓ Programas · Windows</p>
+        <h1 id="module-completion-title">Módulo concluído!</h1>
+        <p class="lead">
+          Você concluiu todas as atividades de Programas. Pode repetir o módulo
+          para praticar de novo ou voltar para escolher outro assunto.
+        </p>
+
+        <p class="module-progress">
+          <span class="module-progress-value">3 de 3</span> atividades
+          concluídas
+        </p>
+        <div
+          class="module-progress-bar"
+          role="progressbar"
+          aria-valuenow="3"
+          aria-valuemin="0"
+          aria-valuemax="3"
+          aria-label="Progresso do módulo Programas"
+        >
+          <span></span>
+        </div>
+
+        <ul class="module-checklist">
+          <li>
+            <span class="check" aria-hidden="true">✓</span>
+            <span>
+              <strong>Abrir um programa</strong>
+              <span>Menu Iniciar · Win + S · Duplo clique</span>
+            </span>
+          </li>
+          <li>
+            <span class="check" aria-hidden="true">✓</span>
+            <span>
+              <strong>Fechar um programa</strong>
+              <span>Botão X · Alt + F4 · Gerenciador de Tarefas</span>
+            </span>
+          </li>
+          <li>
+            <span class="check" aria-hidden="true">✓</span>
+            <span>
+              <strong>Alternar programas</strong>
+              <span>Alt + Tab · Win + Tab</span>
+            </span>
+          </li>
+        </ul>
+
+        <div class="program-actions module-actions">
+          <button class="primary" type="button" data-action="Repetir módulo">
+            Repetir módulo
+          </button>
+          <button type="button" data-action="Voltar ao início">
+            Voltar ao início
+          </button>
+        </div>
+
+        <p
+          id="proto-action"
+          class="proto-action"
+          role="status"
+          aria-live="polite"
+        ></p>
+      </section>
+    </main>
+    <script>
+      for (const button of document.querySelectorAll(
+        '.module-actions button',
+      )) {
+        button.addEventListener('click', function () {
+          document.getElementById('proto-action').textContent =
+            'Protótipo: "' +
+            button.dataset.action +
+            '" (ação apenas ilustrativa nesta demonstração).';
+        });
+      }
+    </script>
+  </body>
+</html>

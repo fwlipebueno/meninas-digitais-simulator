@@ -407,3 +407,161 @@ test('Excluir: Não e Esc preservam o arquivo; Sim remove e repetição restaura
   await completeAndRepeat(page);
   await expect(icon).toBeVisible();
 });
+
+test('Módulo: concluir as quatro atividades de Arquivos mostra a tela de módulo concluído', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Arquivos', exact: true }).click();
+
+  await page.getByRole('button', { name: /Criar um documento/ }).click();
+  await page.getByRole('button', { name: 'Arquivo', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Opções de Arquivo' })
+    .getByRole('button', { name: 'Novo', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Atividade concluída' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Voltar à seleção' }).click();
+
+  await page.getByRole('button', { name: /Salvar um arquivo/ }).click();
+  const editor = page.getByRole('textbox', {
+    name: 'Conteúdo do Bloco de Notas',
+  });
+  await editor.fill('Minha ideia para o projeto');
+  await page.getByRole('button', { name: 'Arquivo', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Opções de Arquivo' })
+    .getByRole('button', { name: 'Salvar como', exact: true })
+    .click();
+  const dialog = page.getByRole('dialog', { name: 'Salvar como', exact: true });
+  const name = dialog.getByRole('textbox', { name: 'Nome do arquivo' });
+  await name.fill('ideias2.txt');
+  await name.press('Enter');
+  await editor.fill('Minha ideia para o projeto atualizada');
+  await page.getByRole('button', { name: 'Arquivo', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Opções de Arquivo' })
+    .getByRole('button', { name: 'Salvar', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Atividade concluída' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Voltar à seleção' }).click();
+
+  await page.getByRole('button', { name: /Renomear um arquivo/ }).click();
+  const folder = page.getByRole('region', { name: 'Pasta simulada' });
+  await folder
+    .getByRole('button', { name: 'ideias.txt', exact: true })
+    .click({ button: 'right' });
+  await page
+    .getByRole('group', { name: 'Menu de contexto' })
+    .getByRole('button', { name: 'Renomear', exact: true })
+    .click();
+  await page
+    .getByRole('textbox', { name: 'Novo nome do arquivo' })
+    .fill('renomeado.txt');
+  await page
+    .getByRole('textbox', { name: 'Novo nome do arquivo' })
+    .press('Enter');
+  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Atividade concluída' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Voltar à seleção' }).click();
+
+  await page.getByRole('button', { name: /Excluir um arquivo/ }).click();
+  await page
+    .getByRole('region', { name: 'Pasta simulada' })
+    .getByRole('button', { name: 'ideias.txt', exact: true })
+    .click({ button: 'right' });
+  await page
+    .getByRole('group', { name: 'Menu de contexto' })
+    .getByRole('button', { name: 'Excluir', exact: true })
+    .click();
+  const excludeDialog = page.getByRole('dialog', {
+    name: 'Excluir arquivo',
+    exact: true,
+  });
+  await excludeDialog.getByRole('button', { name: 'Sim', exact: true }).click();
+  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Módulo concluído!' }),
+  ).toBeFocused();
+  await expect(
+    page.getByRole('progressbar', { name: 'Progresso do módulo Arquivos' }),
+  ).toHaveAttribute('aria-valuenow', '4');
+  await expect(page.locator('.module-checklist li')).toHaveCount(4);
+  await page.getByRole('button', { name: 'Repetir módulo' }).click();
+  await expect(
+    page.getByRole('heading', {
+      name: 'Criar, salvar, renomear e excluir arquivos',
+    }),
+  ).toBeFocused();
+});
+
+test('Integração: progresso anterior restaurado e conclusão registrada na API', async ({
+  page,
+}) => {
+  let progressSessionId: string | null = null;
+  let completion: { sessionId?: string; activityId?: string } | null = null;
+  await page.route('http://127.0.0.1:3001/**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === '/progress') {
+      progressSessionId = url.searchParams.get('sessionId');
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          completedActivityIds: ['new-file', 'save-file', 'rename-file'],
+        }),
+      });
+    } else if (url.pathname === '/completions') {
+      completion = JSON.parse(route.request().postData() ?? '{}') as {
+        sessionId?: string;
+        activityId?: string;
+      };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{"ok":true}',
+      });
+    } else {
+      await route.abort();
+    }
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Arquivos', exact: true }).click();
+  await page.getByRole('button', { name: /Excluir um arquivo/ }).click();
+  await page
+    .getByRole('region', { name: 'Pasta simulada' })
+    .getByRole('button', { name: 'ideias.txt', exact: true })
+    .click({ button: 'right' });
+  await page
+    .getByRole('group', { name: 'Menu de contexto' })
+    .getByRole('button', { name: 'Excluir', exact: true })
+    .click();
+  const excludeDialog = page.getByRole('dialog', {
+    name: 'Excluir arquivo',
+    exact: true,
+  });
+  await excludeDialog.getByRole('button', { name: 'Sim', exact: true }).click();
+  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+
+  await expect(
+    page.getByRole('heading', { name: 'Módulo concluído!' }),
+  ).toBeVisible();
+  await expect
+    .poll(() => completion)
+    .toEqual({
+      sessionId: progressSessionId,
+      activityId: 'delete-file',
+    });
+  expect(progressSessionId).toMatch(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  );
+});

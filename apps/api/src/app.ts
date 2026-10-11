@@ -1,61 +1,85 @@
-// Arquivo: apps/api/src/app.ts
-import express from 'express';
 import cors from 'cors';
-import type { Pool } from 'pg';
+import { eq } from 'drizzle-orm';
+import express from 'express';
+import { z } from 'zod';
+import type { Database } from './db.ts';
+import { activity, activityCompletion, trainingSession } from './schema.ts';
 
-export function createApp(pool: Pool) {
+const completionSchema = z.object({
+  sessionId: z.uuid(),
+  activityId: z.string().min(1),
+});
+
+const progressQuerySchema = z.object({
+  sessionId: z.uuid(),
+});
+
+export function createApp(db: Database) {
   const app = express();
 
   app.use(cors());
   app.use(express.json());
 
-  // 1. Rota para iniciar uma nova sessão (chame quando o site abrir)
-  app.post('/api/sessions', async (_req, res) => {
-    try {
-      const result = await pool.query(
-        'INSERT INTO training_session (started_at) VALUES (CURRENT_TIMESTAMP) RETURNING id, started_at',
-      );
-      res.status(201).json(result.rows[0]);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Erro ao criar sessão' });
+  app.post('/completions', async (req, res) => {
+    const parsed = completionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'sessionId deve ser UUID e activityId não pode ser vazio.',
+      });
     }
-  });
 
-  // 2. Rota para registrar uma atividade concluída (chame no método concluir() do Front)
-  app.post('/api/sessions/:id/activities', async (req, res) => {
-    const sessionId = req.params.id;
-    const { activity_id } = req.body;
+    const { sessionId, activityId } = parsed.data;
 
     try {
-      const result = await pool.query(
-        `INSERT INTO activity_completion (session_id, activity_id, completed_at)
-       VALUES ($1, $2, CURRENT_TIMESTAMP)
-       RETURNING *`,
-        [sessionId, activity_id],
-      );
-      res.status(201).json(result.rows[0]);
-    } catch (err: unknown) {
-      // Tratamento empático de erros do banco
-      const code =
-        typeof err === 'object' && err !== null && 'code' in err
-          ? err.code
-          : undefined;
-      if (code === '23503')
+      const knownActivity = await db
+        .select({ id: activity.id })
+        .from(activity)
+        .where(eq(activity.id, activityId))
+        .limit(1);
+
+      if (knownActivity.length === 0) {
         return res
           .status(400)
-          .json({ error: 'Sessão ou atividade inexistente.' });
-      if (code === '23505')
-        return res
-          .status(409)
-          .json({ error: 'Essa atividade já foi feita nesta sessão.' });
+          .json({ error: `Atividade inexistente: ${activityId}.` });
+      }
 
+      await db
+        .insert(trainingSession)
+        .values({ id: sessionId })
+        .onConflictDoNothing();
+      await db
+        .insert(activityCompletion)
+        .values({ sessionId, activityId })
+        .onConflictDoNothing();
+
+      return res.status(200).json({ ok: true });
+    } catch (err) {
       console.error(err);
-      res.status(500).json({ error: 'Erro interno no servidor.' });
+      return res.status(500).json({ error: 'Erro interno no servidor.' });
     }
   });
 
-  // 3. (Bônus) Rota de Healthcheck para você testar no navegador
+  app.get('/progress', async (req, res) => {
+    const parsed = progressQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'sessionId deve ser UUID.' });
+    }
+
+    try {
+      const rows = await db
+        .select({ activityId: activityCompletion.activityId })
+        .from(activityCompletion)
+        .where(eq(activityCompletion.sessionId, parsed.data.sessionId));
+
+      return res
+        .status(200)
+        .json({ completedActivityIds: rows.map((row) => row.activityId) });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Erro interno no servidor.' });
+    }
+  });
+
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
   });

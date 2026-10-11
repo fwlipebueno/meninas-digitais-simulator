@@ -463,3 +463,135 @@ test('Abrir: seleção, duplo clique e controles funcionais do Bloco de Notas', 
     ),
   ).toBe(true);
 });
+
+test('Módulo: concluir as três atividades de Programas mostra a tela de módulo concluído', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Programas' }).click();
+
+  await page.getByRole('button', { name: /Abrir um programa/ }).click();
+  await page
+    .getByRole('group', { name: 'Método desta atividade' })
+    .getByRole('button', { name: 'Menu Iniciar', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Iniciar', exact: false })
+    .last()
+    .click();
+  await page.getByRole('textbox', { name: 'Pesquisar aplicativos' }).fill('bl');
+  await page
+    .getByRole('button', { name: /Bloco de Notas.*Melhor correspondência/ })
+    .click();
+  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Atividade concluída' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Voltar à seleção' }).click();
+
+  await page.getByRole('button', { name: /Fechar um programa/ }).click();
+  await page
+    .getByRole('group', { name: 'Método desta atividade' })
+    .getByRole('button', { name: 'Botão X', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Fechar Bloco de Notas', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Atividade concluída' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Voltar à seleção' }).click();
+
+  await page.getByRole('button', { name: /Alternar programas/ }).click();
+  await page
+    .getByRole('group', { name: 'Método desta atividade' })
+    .getByRole('button', { name: 'Alt + Tab', exact: true })
+    .click();
+  await page
+    .getByRole('group', { name: 'Atalhos simulados' })
+    .getByRole('button', { name: 'Alt + Tab', exact: true })
+    .click();
+  const selector = page.getByRole('region', { name: 'Seletor Alt + Tab' });
+  const tab = selector.getByRole('button', { name: 'Tab', exact: true });
+  await tab.press('Enter');
+  await selector.getByRole('button', { name: 'Soltar Alt' }).press('Enter');
+  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Módulo concluído!' }),
+  ).toBeFocused();
+  await expect(
+    page.getByRole('progressbar', {
+      name: 'Progresso do módulo Programas',
+    }),
+  ).toHaveAttribute('aria-valuenow', '3');
+  await expect(page.locator('.module-checklist li')).toHaveCount(3);
+  await page.getByRole('button', { name: 'Repetir módulo' }).click();
+  await expect(
+    page.getByRole('heading', {
+      name: 'Abrir, fechar e alternar entre programas',
+    }),
+  ).toBeFocused();
+});
+
+test('Integração: progresso anterior restaurado e conclusão registrada na API', async ({
+  page,
+}) => {
+  let progressSessionId: string | null = null;
+  let completion: { sessionId?: string; activityId?: string } | null = null;
+  await page.route('http://127.0.0.1:3001/**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === '/progress') {
+      progressSessionId = url.searchParams.get('sessionId');
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          completedActivityIds: ['open-program', 'close-program'],
+        }),
+      });
+    } else if (url.pathname === '/completions') {
+      completion = JSON.parse(route.request().postData() ?? '{}') as {
+        sessionId?: string;
+        activityId?: string;
+      };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{"ok":true}',
+      });
+    } else {
+      await route.abort();
+    }
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Programas' }).click();
+  await page.getByRole('button', { name: /Alternar programas/ }).click();
+  await page
+    .getByRole('group', { name: 'Método desta atividade' })
+    .getByRole('button', { name: 'Alt + Tab', exact: true })
+    .click();
+  await page
+    .getByRole('group', { name: 'Atalhos simulados' })
+    .getByRole('button', { name: 'Alt + Tab', exact: true })
+    .click();
+  const selector = page.getByRole('region', { name: 'Seletor Alt + Tab' });
+  const tab = selector.getByRole('button', { name: 'Tab', exact: true });
+  await tab.press('Enter');
+  await selector.getByRole('button', { name: 'Soltar Alt' }).press('Enter');
+  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+
+  await expect(
+    page.getByRole('heading', { name: 'Módulo concluído!' }),
+  ).toBeVisible();
+  await expect
+    .poll(() => completion)
+    .toEqual({
+      sessionId: progressSessionId,
+      activityId: 'switch-program',
+    });
+  expect(progressSessionId).toMatch(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  );
+});

@@ -15,7 +15,7 @@
   "scripts": {
     "dev": "concurrently --kill-others --names web,api \"npm run dev -w apps/web\" \"npm run dev -w apps/api\"",
     "build": "npm run build --workspaces",
-    "lint": "eslint . && prettier --check .",
+    "lint": "eslint . && prettier --check . --ignore-path .prettierignore --ignore-path .git/info/exclude",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit && tsc -p apps/web/tsconfig.json && tsc -p apps/api/tsconfig.json --noEmit && tsc -p tests/e2e/tsconfig.json",
     "test": "vitest run",
