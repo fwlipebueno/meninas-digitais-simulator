@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { ModuleCompletion } from '../ModuleCompletion';
+import {
+  fetchCompletedActivityIds,
+  getSessionId,
+  recordCompletion,
+} from '../api';
 import { ProgramSimulation } from './ProgramSimulation';
 import './programs.css';
 
@@ -29,16 +35,69 @@ export type Method = {
   [A in Activity]: keyof (typeof activities)[A]['methods'];
 }[Activity];
 
-type Screen = { activity: Activity; method: Method; result?: string } | null;
+type Screen = {
+  activity: Activity;
+  method: Method;
+  result?: string;
+  summary?: boolean;
+} | null;
+
+const activityIds = {
+  open: 'open-program',
+  close: 'close-program',
+  switch: 'switch-program',
+} as const satisfies Record<Activity, string>;
 
 export function Programs({ onBack }: { onBack: () => void }) {
   const [screen, setScreen] = useState<Screen>(null);
+  const [completed, setCompleted] = useState<ReadonlySet<Activity>>(
+    () => new Set(),
+  );
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
-  }, [screen?.activity, screen?.result]);
+  }, [screen?.activity, screen?.result, screen?.summary]);
 
-  if (screen?.result)
+  useEffect(() => {
+    let active = true;
+    fetchCompletedActivityIds(getSessionId())
+      .then((ids) => {
+        if (!active) return;
+        setCompleted(
+          (prev) =>
+            new Set([
+              ...prev,
+              ...(Object.keys(activities) as Activity[]).filter((activity) =>
+                ids.includes(activityIds[activity]),
+              ),
+            ]),
+        );
+      })
+      .catch((error: unknown) =>
+        console.warn('Progresso anterior não carregado:', error),
+      );
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (screen?.result) {
+    const allDone = (Object.keys(activities) as Activity[]).every((activity) =>
+      completed.has(activity),
+    );
+    if (screen.summary)
+      return (
+        <ModuleCompletion
+          eyebrow="✓ Programas · Windows"
+          moduleName="Programas"
+          items={(Object.keys(activities) as Activity[]).map((activity) => ({
+            title: activities[activity].title,
+            subtitle: Object.values(activities[activity].methods).join(' · '),
+          }))}
+          onRepeat={() => setScreen(null)}
+          onBack={onBack}
+        />
+      );
     return (
       <section className="completion">
         <p className="eyebrow">✓ Programas</p>
@@ -55,9 +114,15 @@ export function Programs({ onBack }: { onBack: () => void }) {
             Repetir atividade
           </button>
           <button onClick={() => setScreen(null)}>Voltar à seleção</button>
+          {allDone && (
+            <button onClick={() => setScreen({ ...screen, summary: true })}>
+              Ver resumo do módulo
+            </button>
+          )}
         </div>
       </section>
     );
+  }
 
   if (screen)
     return (
@@ -95,7 +160,20 @@ export function Programs({ onBack }: { onBack: () => void }) {
           key={`${screen.activity}-${screen.method}`}
           activity={screen.activity}
           method={screen.method}
-          onComplete={(result) => setScreen({ ...screen, result })}
+          onComplete={(result) => {
+            setCompleted((prev) => {
+              const next = new Set(prev);
+              next.add(screen.activity);
+              return next;
+            });
+            recordCompletion(
+              getSessionId(),
+              activityIds[screen.activity],
+            ).catch((error: unknown) =>
+              console.warn('Conclusão não registrada:', error),
+            );
+            setScreen({ ...screen, result });
+          }}
         />
       </>
     );
@@ -127,6 +205,7 @@ export function Programs({ onBack }: { onBack: () => void }) {
             <span>
               <strong>{info.title}</strong>
               <span>{Object.values(info.methods).join(' · ')}</span>
+              {completed.has(activity as Activity) && <span>✓ Concluída</span>}
             </span>
             <span aria-hidden="true">→</span>
           </button>

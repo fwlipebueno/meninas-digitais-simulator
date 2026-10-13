@@ -12,6 +12,20 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.11-alpine
+        env:
+          POSTGRES_USER: simulator
+          POSTGRES_PASSWORD: integration-test
+          POSTGRES_DB: simulator_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,6 +35,9 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run check
+      - run: npm run test:integration
+        env:
+          TEST_DATABASE_URL: postgresql://simulator:integration-test@127.0.0.1:5432/simulator_test
       - name: Relatório do smoke test
         if: failure()
         uses: actions/upload-artifact@v4
@@ -45,6 +62,7 @@ jobs:
           include-hidden-files: true
           path: |
             apps/api/dist/
+            apps/api/drizzle/
             apps/api/package.json
             apps/web/package.json
             package.json
