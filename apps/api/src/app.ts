@@ -5,20 +5,21 @@ import { z } from 'zod';
 import type { Database } from './db.ts';
 import { activity, activityCompletion, trainingSession } from './schema.ts';
 
-const completionSchema = z.object({
+const completionSchema = z.strictObject({
   sessionId: z.uuid(),
   activityId: z.string().min(1),
 });
 
-const progressQuerySchema = z.object({
+const progressQuerySchema = z.strictObject({
   sessionId: z.uuid(),
 });
 
 export function createApp(db: Database) {
   const app = express();
+  app.disable('x-powered-by');
 
   app.use(cors());
-  app.use(express.json());
+  app.use(express.json({ limit: '4kb' }));
 
   app.post('/completions', async (req, res) => {
     const parsed = completionSchema.safeParse(req.body);

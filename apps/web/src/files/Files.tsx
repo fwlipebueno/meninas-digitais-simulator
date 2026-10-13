@@ -36,6 +36,7 @@ export function Files({ onBack }: { onBack: () => void }) {
   const [screen, setScreen] = useState<{
     activity: FileActivity;
     result?: string;
+    summary?: boolean;
   } | null>(null);
   const [completed, setCompleted] = useState<ReadonlySet<FileActivity>>(
     () => new Set(),
@@ -44,7 +45,7 @@ export function Files({ onBack }: { onBack: () => void }) {
   const activityRoot = useRef<HTMLDivElement>(null);
   useEffect(() => {
     heading.current?.focus();
-  }, [screen?.activity, screen?.result]);
+  }, [screen?.activity, screen?.result, screen?.summary]);
 
   useEffect(() => {
     let active = true;
@@ -72,9 +73,7 @@ export function Files({ onBack }: { onBack: () => void }) {
   return (
     <div ref={activityRoot} className="files-module">
       {screen?.result ? (
-        (Object.keys(activities) as FileActivity[]).every((activity) =>
-          completed.has(activity),
-        ) ? (
+        screen.summary ? (
           <ModuleCompletion
             eyebrow="✓ Arquivos · Bloco de Notas"
             moduleName="Arquivos"
@@ -84,10 +83,7 @@ export function Files({ onBack }: { onBack: () => void }) {
                 subtitle: activities[activity].description,
               }),
             )}
-            onRepeat={() => {
-              setCompleted(new Set<FileActivity>());
-              setScreen(null);
-            }}
+            onRepeat={() => setScreen(null)}
             onBack={onBack}
           />
         ) : (
@@ -102,6 +98,13 @@ export function Files({ onBack }: { onBack: () => void }) {
                 Repetir atividade
               </button>
               <button onClick={() => setScreen(null)}>Voltar à seleção</button>
+              {(Object.keys(activities) as FileActivity[]).every((activity) =>
+                completed.has(activity),
+              ) && (
+                <button onClick={() => setScreen({ ...screen, summary: true })}>
+                  Ver resumo do módulo
+                </button>
+              )}
             </div>
           </section>
         )
@@ -157,6 +160,9 @@ export function Files({ onBack }: { onBack: () => void }) {
                     <span>
                       <strong>{info.title}</strong>
                       <span>{info.description}</span>
+                      {completed.has(activity as FileActivity) && (
+                        <span>✓ Concluída</span>
+                      )}
                     </span>
                     <span aria-hidden="true">→</span>
                   </button>

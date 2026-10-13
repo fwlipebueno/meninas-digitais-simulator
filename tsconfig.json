@@ -18,6 +18,11 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["*.ts", "apps/*/*.config.ts", "apps/api/src/**/*.test.ts"],
+  "include": [
+    "*.ts",
+    "apps/*/*.config.ts",
+    "apps/api/src/**/*.test.ts",
+    "tests/integration/**/*.ts"
+  ],
   "exclude": ["node_modules", "**/dist"]
 }

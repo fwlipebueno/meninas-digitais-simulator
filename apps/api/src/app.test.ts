@@ -29,6 +29,7 @@ test('GET /health responde com o estado do processo em JSON', async () => {
     const response = await fetch(`${baseUrl}/health`);
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('application/json');
+    expect(response.headers.has('x-powered-by')).toBe(false);
     expect(await response.json()).toEqual({ status: 'ok' });
   });
 });
@@ -51,5 +52,39 @@ test('GET /progress rejeita sessionId que não é UUID', async () => {
   await withServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/progress?sessionId=nao-e-uuid`);
     expect(response.status).toBe(400);
+  });
+});
+
+test('contratos de progresso rejeitam campos adicionais', async () => {
+  await withServer(async (baseUrl) => {
+    const sessionId = crypto.randomUUID();
+    const response = await fetch(`${baseUrl}/completions`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        sessionId,
+        activityId: 'open-program',
+        content: 'Não persistir',
+      }),
+    });
+    expect(response.status).toBe(400);
+    expect(
+      (await fetch(`${baseUrl}/progress?sessionId=${sessionId}&extra=true`))
+        .status,
+    ).toBe(400);
+  });
+});
+
+test('POST /completions limita o corpo a 4kb', async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/completions`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: crypto.randomUUID(),
+        activityId: 'a'.repeat(4096),
+      }),
+    });
+    expect(response.status).toBe(413);
   });
 });

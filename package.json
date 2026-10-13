@@ -19,6 +19,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit && tsc -p apps/web/tsconfig.json && tsc -p apps/api/tsconfig.json --noEmit && tsc -p tests/e2e/tsconfig.json",
     "test": "vitest run",
+    "test:integration": "vitest run --config tests/integration/vitest.config.ts",
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm test && npm run build && npm run test:e2e",
     "db:up": "docker compose up -d --wait",

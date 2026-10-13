@@ -1,5 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+  await page.route('http://127.0.0.1:3001/**', (route) => route.abort());
+});
+
 test('Alternar: Alt + Tab percorre sem ativar até Soltar Alt', async ({
   page,
 }) => {
@@ -518,6 +522,16 @@ test('Módulo: concluir as três atividades de Programas mostra a tela de módul
   await selector.getByRole('button', { name: 'Soltar Alt' }).press('Enter');
   await page.getByRole('button', { name: 'Concluir atividade' }).click();
   await expect(
+    page.getByRole('heading', { name: 'Atividade concluída' }),
+  ).toBeFocused();
+  await expect(
+    page.getByRole('button', { name: 'Repetir atividade', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Voltar à seleção', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Ver resumo do módulo' }).click();
+  await expect(
     page.getByRole('heading', { name: 'Módulo concluído!' }),
   ).toBeFocused();
   await expect(
@@ -532,6 +546,9 @@ test('Módulo: concluir as três atividades de Programas mostra a tela de módul
       name: 'Abrir, fechar e alternar entre programas',
     }),
   ).toBeFocused();
+  await expect(
+    page.getByRole('button').filter({ hasText: '✓ Concluída' }),
+  ).toHaveCount(3);
 });
 
 test('Integração: progresso anterior restaurado e conclusão registrada na API', async ({
@@ -567,6 +584,9 @@ test('Integração: progresso anterior restaurado e conclusão registrada na API
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Programas' }).click();
+  await expect(
+    page.getByRole('button').filter({ hasText: '✓ Concluída' }),
+  ).toHaveCount(2);
   await page.getByRole('button', { name: /Alternar programas/ }).click();
   await page
     .getByRole('group', { name: 'Método desta atividade' })
@@ -582,6 +602,16 @@ test('Integração: progresso anterior restaurado e conclusão registrada na API
   await selector.getByRole('button', { name: 'Soltar Alt' }).press('Enter');
   await page.getByRole('button', { name: 'Concluir atividade' }).click();
 
+  await expect(
+    page.getByRole('heading', { name: 'Atividade concluída' }),
+  ).toBeFocused();
+  await expect(
+    page.getByRole('button', { name: 'Repetir atividade', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Voltar à seleção', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Ver resumo do módulo' }).click();
   await expect(
     page.getByRole('heading', { name: 'Módulo concluído!' }),
   ).toBeVisible();

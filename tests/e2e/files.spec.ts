@@ -1,5 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+  await page.route('http://127.0.0.1:3001/**', (route) => route.abort());
+});
+
 async function start(page: Page, activity: string) {
   await page.goto('/');
   await page.getByRole('button', { name: 'Arquivos', exact: true }).click();
@@ -489,6 +493,16 @@ test('Módulo: concluir as quatro atividades de Arquivos mostra a tela de módul
   await excludeDialog.getByRole('button', { name: 'Sim', exact: true }).click();
   await page.getByRole('button', { name: 'Concluir atividade' }).click();
   await expect(
+    page.getByRole('heading', { name: 'Atividade concluída' }),
+  ).toBeFocused();
+  await expect(
+    page.getByRole('button', { name: 'Repetir atividade', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Voltar à seleção', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Ver resumo do módulo' }).click();
+  await expect(
     page.getByRole('heading', { name: 'Módulo concluído!' }),
   ).toBeFocused();
   await expect(
@@ -501,6 +515,9 @@ test('Módulo: concluir as quatro atividades de Arquivos mostra a tela de módul
       name: 'Criar, salvar, renomear e excluir arquivos',
     }),
   ).toBeFocused();
+  await expect(
+    page.getByRole('button').filter({ hasText: '✓ Concluída' }),
+  ).toHaveCount(4);
 });
 
 test('Integração: progresso anterior restaurado e conclusão registrada na API', async ({
@@ -536,6 +553,9 @@ test('Integração: progresso anterior restaurado e conclusão registrada na API
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Arquivos', exact: true }).click();
+  await expect(
+    page.getByRole('button').filter({ hasText: '✓ Concluída' }),
+  ).toHaveCount(3);
   await page.getByRole('button', { name: /Excluir um arquivo/ }).click();
   await page
     .getByRole('region', { name: 'Pasta simulada' })
@@ -552,6 +572,16 @@ test('Integração: progresso anterior restaurado e conclusão registrada na API
   await excludeDialog.getByRole('button', { name: 'Sim', exact: true }).click();
   await page.getByRole('button', { name: 'Concluir atividade' }).click();
 
+  await expect(
+    page.getByRole('heading', { name: 'Atividade concluída' }),
+  ).toBeFocused();
+  await expect(
+    page.getByRole('button', { name: 'Repetir atividade', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Voltar à seleção', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Ver resumo do módulo' }).click();
   await expect(
     page.getByRole('heading', { name: 'Módulo concluído!' }),
   ).toBeVisible();

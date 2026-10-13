@@ -1,13 +1,22 @@
 const API_BASE_URL: string =
   import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:3001';
 const SESSION_STORAGE_KEY = 'meninas-digitais.sessionId';
+let sessionId: string | undefined;
 
 export function getSessionId(): string {
-  const stored = localStorage.getItem(SESSION_STORAGE_KEY);
-  if (stored) return stored;
-  const created = crypto.randomUUID();
-  localStorage.setItem(SESSION_STORAGE_KEY, created);
-  return created;
+  if (sessionId) return sessionId;
+  try {
+    sessionId = sessionStorage.getItem(SESSION_STORAGE_KEY) ?? undefined;
+  } catch {
+    // Storage é opcional.
+  }
+  sessionId ||= crypto.randomUUID();
+  try {
+    sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+  } catch {
+    // Mantém a sessão em memória.
+  }
+  return sessionId;
 }
 
 export async function fetchCompletedActivityIds(

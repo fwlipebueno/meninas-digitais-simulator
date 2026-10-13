@@ -35,7 +35,12 @@ export type Method = {
   [A in Activity]: keyof (typeof activities)[A]['methods'];
 }[Activity];
 
-type Screen = { activity: Activity; method: Method; result?: string } | null;
+type Screen = {
+  activity: Activity;
+  method: Method;
+  result?: string;
+  summary?: boolean;
+} | null;
 
 const activityIds = {
   open: 'open-program',
@@ -51,7 +56,7 @@ export function Programs({ onBack }: { onBack: () => void }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
-  }, [screen?.activity, screen?.result]);
+  }, [screen?.activity, screen?.result, screen?.summary]);
 
   useEffect(() => {
     let active = true;
@@ -80,7 +85,7 @@ export function Programs({ onBack }: { onBack: () => void }) {
     const allDone = (Object.keys(activities) as Activity[]).every((activity) =>
       completed.has(activity),
     );
-    if (allDone)
+    if (screen.summary)
       return (
         <ModuleCompletion
           eyebrow="✓ Programas · Windows"
@@ -89,10 +94,7 @@ export function Programs({ onBack }: { onBack: () => void }) {
             title: activities[activity].title,
             subtitle: Object.values(activities[activity].methods).join(' · '),
           }))}
-          onRepeat={() => {
-            setCompleted(new Set<Activity>());
-            setScreen(null);
-          }}
+          onRepeat={() => setScreen(null)}
           onBack={onBack}
         />
       );
@@ -112,6 +114,11 @@ export function Programs({ onBack }: { onBack: () => void }) {
             Repetir atividade
           </button>
           <button onClick={() => setScreen(null)}>Voltar à seleção</button>
+          {allDone && (
+            <button onClick={() => setScreen({ ...screen, summary: true })}>
+              Ver resumo do módulo
+            </button>
+          )}
         </div>
       </section>
     );
@@ -198,6 +205,7 @@ export function Programs({ onBack }: { onBack: () => void }) {
             <span>
               <strong>{info.title}</strong>
               <span>{Object.values(info.methods).join(' · ')}</span>
+              {completed.has(activity as Activity) && <span>✓ Concluída</span>}
             </span>
             <span aria-hidden="true">→</span>
           </button>
