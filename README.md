@@ -10,9 +10,9 @@ As atividades previstas seguem **instrução → ação da participante → vali
 
 ## Estado atual
 
-A fundação **PB-04** fornece o ambiente de desenvolvimento, testes e CI. O **Incremento 1 — Programas (RF-01 a RF-21)** permite abrir, fechar e alternar programas, com instruções, feedback, repetição e retorno à seleção. O **Incremento 2 — Arquivos (RF-22 a RF-30)** está disponível para criar, salvar, renomear e excluir arquivos. E-mail e Google Docs continuam em desenvolvimento. A interface preserva as cores e o logo do protótipo validado. A web já se integra à API para registrar e restaurar o progresso das atividades por sessão anônima.
+A fundação **PB-04** fornece o ambiente de desenvolvimento, testes e CI. O **Incremento 1 — Programas (RF-01 a RF-21)** permite abrir, fechar e alternar programas, com instruções, feedback, repetição e retorno à seleção. O **Incremento 2 — Arquivos (RF-22 a RF-30)** está disponível para criar, salvar, renomear e excluir arquivos. O **Incremento 3 — E-mail (RF-31 a RF-45)** está disponível para criar contas, fazer login, compor, enviar e descartar mensagens simuladas. Google Docs continua em desenvolvimento. A interface preserva as cores e o logo do protótipo validado. A web já se integra à API para registrar e restaurar o progresso das atividades por sessão anônima.
 
-Os atalhos reservados do computador são ensinados por controles dentro da página. O estado das janelas é local e reiniciado ao trocar de método, repetir ou sair da atividade. No módulo Programas, o Bloco de Notas permite minimizar, maximizar, restaurar e fechar. No módulo Arquivos, o documento e o arquivo salvo ficam somente no estado da atividade; repetir ou sair descarta esses dados. Cada atividade mantém sua conclusão individual, repetição e retorno à seleção. Quando todas estiverem concluídas, “Ver resumo do módulo” abre o resumo adicional. Repetir uma atividade ou módulo não apaga conclusões; a seleção indica as atividades já concluídas. A API guarda o progresso (quais atividades foram concluídas) por sessão anônima, mas não grava, baixa nem persiste arquivos, contas ou outros dados reais.
+Os atalhos reservados do computador são ensinados por controles dentro da página. O estado das janelas é local e reiniciado ao trocar de método, repetir ou sair da atividade. No módulo Programas, o Bloco de Notas permite minimizar, maximizar, restaurar e fechar. No módulo Arquivos, o documento e o arquivo salvo ficam somente no estado da atividade; repetir ou sair descarta esses dados. No módulo E-mail, contas criadas ficam somente em memória enquanto o módulo está aberto; sair dele ou recarregar descarta as contas. Mensagens e rascunhos existem apenas na atividade, sendo descartados ao repetir ou sair dela. O cadastro verifica disponibilidade e senhas com pelo menos 8 caracteres, letras e números; os campos de senha são sempre mascarados. Só o clique em “Concluir atividade”, após atingir o objetivo, registra o progresso. Cada atividade mantém sua conclusão individual, repetição e retorno à seleção. Quando todas estiverem concluídas, “Ver resumo do módulo” abre o resumo adicional. Repetir uma atividade ou módulo não apaga conclusões; a seleção indica as atividades já concluídas. A API guarda o progresso (quais atividades foram concluídas) por sessão anônima, mas não grava, baixa nem persiste arquivos, contas ou outros dados reais.
 
 | Módulo previsto           | Conteúdo                                                                                 | Requisitos    |
 | ------------------------- | ---------------------------------------------------------------------------------------- | ------------- |
@@ -29,7 +29,7 @@ O modelo de dados está definido em `apps/api/src/schema.ts` (Drizzle), com trê
 
 A validação do protótipo em 12/09/2026 identificou três ajustes para as atividades: incluir opção de retorno, destacar o controle de atalhos e habilitar minimizar, maximizar e fechar no Bloco de Notas simulado.
 
-O desenvolvimento considera como limites **500 ms** para interações simples (RNF-01) e **500 ms** para atualização de buscas e filtros (RNF-02). Os módulos devem oferecer fontes de pelo menos 14px e contraste adequado (RNF-06), atalhos sem conflitos (RNF-08), feedback claro e adequado ao público (RNF-09) e senhas simuladas mascaradas (RNF-10). A interface usa fonte base de 16px, textos auxiliares de pelo menos 14px e foco de teclado visível. Programas e Arquivos usam atualizações locais, sem atrasos artificiais; os testes validam comportamento, sem impor limites temporais dependentes da máquina.
+O desenvolvimento considera como limites **500 ms** para interações simples (RNF-01) e **500 ms** para atualização de buscas e filtros (RNF-02). Os módulos devem oferecer fontes de pelo menos 14px e contraste adequado (RNF-06), atalhos sem conflitos (RNF-08), feedback claro e adequado ao público (RNF-09) e senhas simuladas mascaradas (RNF-10). A interface usa fonte base de 16px, textos auxiliares de pelo menos 14px e foco de teclado visível. Programas, Arquivos e E-mail usam atualizações locais, sem atrasos artificiais; os testes validam comportamento, sem impor limites temporais dependentes da máquina.
 
 ## Stack e organização
 
@@ -37,11 +37,12 @@ React, TypeScript e Vite na web; Node.js, TypeScript e Express na API; PostgreSQ
 
 ```text
 apps/
-  web/                       Tela inicial e módulos Programas e Arquivos em React e CSS próprio
+  web/                       Tela inicial e módulos Programas, Arquivos e E-mail em React e CSS próprio
     src/api.ts               Sessão anônima (sessionStorage ou memória) e clientes de /progress e /completions
     src/ModuleCompletion.tsx Tela de conclusão de módulo
     src/programs/            Navegação, estado das janelas e atividades Abrir/Fechar/Alternar
     src/files/               Navegação, documento e arquivo temporários; Criar/Salvar/Renomear/Excluir
+    src/mail/                Cadastro, login, composição e mensagens temporárias; progresso das 3 atividades
   api/                       Express, ambiente, conexão com o banco (Drizzle) e endpoints
     src/schema.ts            Tabelas training_session, activity e activity_completion
     src/migrate.ts           Aplica as migrations de drizzle/
@@ -121,7 +122,7 @@ npx playwright install chromium
 npm run check
 ```
 
-Em Linux, use `npx playwright install --with-deps chromium` para instalar também as dependências do sistema. Playwright inicia seu servidor na porta 4173 e verifica a tela inicial, os fluxos Abrir, Fechar e Alternar, as atividades Criar, Salvar, Renomear e Excluir e a tela de conclusão de cada módulo, além da integração com a API por requisições simuladas, incluindo teclado, retorno, repetição, confirmação de tarefa sem resposta e consistência entre janelas, tarefas e miniaturas. Os cenários rodam em desktop e em 390 × 844, sem exigir banco. As atualizações são locais e imediatas; não há testes de tempo dependentes da velocidade da máquina. O relatório fica em `playwright-report/`.
+Em Linux, use `npx playwright install --with-deps chromium` para instalar também as dependências do sistema. Playwright inicia seu servidor na porta 4173 e verifica a tela inicial, os fluxos Abrir, Fechar e Alternar, as atividades Criar, Salvar, Renomear e Excluir, cadastro, login, envio e descarte de e-mails e a tela de conclusão de cada módulo, além da integração com a API por requisições simuladas, incluindo teclado, retorno, repetição, confirmação de tarefa sem resposta e consistência entre janelas, tarefas e miniaturas. Os cenários rodam em desktop e em 390 × 844, sem exigir banco. As atualizações são locais e imediatas; não há testes de tempo dependentes da velocidade da máquina. O relatório fica em `playwright-report/`.
 
 O teste PostgreSQL é separado de `npm run check`. Defina `TEST_DATABASE_URL` para um PostgreSQL de teste com permissão `CREATE DATABASE`, nunca para um ambiente de produção. O teste cria e remove seu próprio banco isolado, executa migration/seed compilados duas vezes e verifica conclusões duplicadas, timestamps e isolamento de duas sessões. Exemplo com container descartável:
 

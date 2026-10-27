@@ -63,7 +63,7 @@ test('Criar: Novo limpa o conteúdo, mantém Sem título e permite repetir e ret
   ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'E-mail', exact: true }),
-  ).toHaveCount(0);
+  ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Google Docs', exact: true }),
   ).toHaveCount(0);
