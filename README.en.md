@@ -10,9 +10,9 @@ The planned activities follow **instruction → participant action → validatio
 
 ## Current status
 
-The **PB-04** foundation provides the development environment, tests and CI. **Increment 1 — Programs (RF-01 through RF-21)** supports opening, closing and switching programs, with instructions, feedback, repetition and return to activity selection. **Increment 2 — Files (RF-22 through RF-30)** is available for creating, saving, renaming and deleting files. Email and Google Docs remain in development. The interface preserves the validated prototype's colors and logo. The web app already integrates with the API to record and restore activity progress per anonymous session.
+The **PB-04** foundation provides the development environment, tests and CI. **Increment 1 — Programs (RF-01 through RF-21)** supports opening, closing and switching programs, with instructions, feedback, repetition and return to activity selection. **Increment 2 — Files (RF-22 through RF-30)** is available for creating, saving, renaming and deleting files. **Increment 3 — Email (RF-31 through RF-45)** is available for creating accounts, signing in, composing, sending and discarding simulated messages. Google Docs remains in development. The interface preserves the validated prototype's colors and logo. The web app already integrates with the API to record and restore activity progress per anonymous session.
 
-Reserved computer shortcuts are taught through controls within the page. Window state is local and resets when changing methods, repeating or leaving an activity. In Programs, Notepad supports minimizing, maximizing, restoring and closing. In Files, the document and saved file exist only in the activity state; repeating or leaving discards them. Each activity keeps its individual completion screen, repetition and return to selection. Once all activities are completed, “Ver resumo do módulo” opens an additional summary. Repeating an activity or module never clears completions; selection marks completed activities. The API stores progress (which activities were completed) per anonymous session, but does not write, download or persist files, accounts or other real data.
+Reserved computer shortcuts are taught through controls within the page. Window state is local and resets when changing methods, repeating or leaving an activity. In Programs, Notepad supports minimizing, maximizing, restoring and closing. In Files, the document and saved file exist only in the activity state; repeating or leaving discards them. In Email, created accounts stay only in memory while the module is open; leaving it or reloading discards accounts. Messages and drafts exist only within the activity and are discarded when repeating or leaving it. Registration checks username availability and passwords with at least 8 characters, letters and numbers; password fields are always masked. Progress is recorded only when clicking “Concluir atividade” after reaching the objective. Each activity keeps its individual completion screen, repetition and return to selection. Once all activities are completed, “Ver resumo do módulo” opens an additional summary. Repeating an activity or module never clears completions; selection marks completed activities. The API stores progress (which activities were completed) per anonymous session, but does not write, download or persist files, accounts or other real data.
 
 | Planned module     | Content                                                                            | Requirements        |
 | ------------------ | ---------------------------------------------------------------------------------- | ------------------- |
@@ -29,7 +29,7 @@ The data model is defined in `apps/api/src/schema.ts` (Drizzle), with three tabl
 
 Prototype validation on September 12, 2026 identified three changes for the activities: add a way to go back, highlight the shortcut control, and enable minimize, maximize and close in simulated Notepad.
 
-Development targets a maximum of **500 ms** for simple interactions (RNF-01) and **500 ms** for search and filter updates (RNF-02). Modules must provide fonts of at least 14px and adequate contrast (RNF-06), conflict-free shortcuts (RNF-08), clear, age-appropriate feedback (RNF-09) and masked simulated passwords (RNF-10). The interface uses a 16px base font, supporting text of at least 14px and visible keyboard focus. Programs and Files use local updates without artificial delays; tests validate behavior without machine-dependent timing limits.
+Development targets a maximum of **500 ms** for simple interactions (RNF-01) and **500 ms** for search and filter updates (RNF-02). Modules must provide fonts of at least 14px and adequate contrast (RNF-06), conflict-free shortcuts (RNF-08), clear, age-appropriate feedback (RNF-09) and masked simulated passwords (RNF-10). The interface uses a 16px base font, supporting text of at least 14px and visible keyboard focus. Programs, Files and Email use local updates without artificial delays; tests validate behavior without machine-dependent timing limits.
 
 ## Stack and structure
 
@@ -37,11 +37,12 @@ React, TypeScript and Vite for the web; Node.js, TypeScript and Express for the 
 
 ```text
 apps/
-  web/                       React home page and Programs and Files modules with custom CSS
+  web/                       React home page and Programs, Files and Email modules with custom CSS
     src/api.ts               Anonymous session (sessionStorage or memory) and /progress and /completions clients
     src/ModuleCompletion.tsx Module completion screen
     src/programs/            Navigation, window state and Open/Close/Switch activities
     src/files/               Navigation, temporary document/file and Create/Save/Rename/Delete activities
+    src/mail/                Registration, login, composition and temporary messages; progress for 3 activities
   api/                       Express, environment, database connection (Drizzle) and endpoints
     src/schema.ts            Tables training_session, activity and activity_completion
     src/migrate.ts           Applies the migrations in drizzle/
@@ -121,7 +122,7 @@ npx playwright install chromium
 npm run check
 ```
 
-On Linux, use `npx playwright install --with-deps chromium` to install system dependencies as well. Playwright starts its server on port 4173 and checks the home page, Open, Close and Switch flows, Create, Save, Rename and Delete activities and each module's completion screen, plus API integration through simulated requests, including keyboard access, return, repetition, confirmation for an unresponsive program and consistency between windows, tasks and previews. Scenarios run on desktop and at 390 × 844 without a database. Updates are immediate and local; tests do not rely on machine-dependent timing. The report is written to `playwright-report/`.
+On Linux, use `npx playwright install --with-deps chromium` to install system dependencies as well. Playwright starts its server on port 4173 and checks the home page, Open, Close and Switch flows, Create, Save, Rename and Delete activities, email registration, login, sending and discarding, and each module's completion screen, plus API integration through simulated requests, including keyboard access, return, repetition, confirmation for an unresponsive program and consistency between windows, tasks and previews. Scenarios run on desktop and at 390 × 844 without a database. Updates are immediate and local; tests do not rely on machine-dependent timing. The report is written to `playwright-report/`.
 
 The PostgreSQL test is separate from `npm run check`. Set `TEST_DATABASE_URL` for a test PostgreSQL instance with `CREATE DATABASE` permission, never for production. The test creates and removes its own isolated database, runs compiled migration/seed twice, and checks duplicate completions, timestamps and isolation between two sessions. Example with a disposable container:
 

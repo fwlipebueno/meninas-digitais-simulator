@@ -2,6 +2,7 @@ import { useState } from 'react';
 import logo from './assets/meninas-digitais.png';
 import { Programs } from './programs/Programs';
 import { Files } from './files/Files';
+import { Mail } from './mail/Mail';
 
 const modules = [
   {
@@ -33,7 +34,9 @@ const modules = [
 ] as const;
 
 export function App() {
-  const [module, setModule] = useState<'programs' | 'files' | null>(null);
+  const [module, setModule] = useState<'programs' | 'files' | 'email' | null>(
+    null,
+  );
   return (
     <>
       <a className="skip-link" href="#conteudo">
@@ -53,6 +56,8 @@ export function App() {
           <Programs onBack={() => setModule(null)} />
         ) : module === 'files' ? (
           <Files onBack={() => setModule(null)} />
+        ) : module === 'email' ? (
+          <Mail onBack={() => setModule(null)} />
         ) : (
           <>
             <div className="intro">
@@ -74,10 +79,12 @@ export function App() {
             <section aria-labelledby="modules-title">
               <div className="section-heading">
                 <h2 id="modules-title">Módulos de aprendizagem</h2>
-                <span className="status">Programas e Arquivos disponíveis</span>
+                <span className="status">
+                  Programas, Arquivos e E-mail disponíveis
+                </span>
               </div>
               <p className="availability">
-                Pratique em Programas e Arquivos. E-mail e Google Docs estão em
+                Pratique em Programas, Arquivos e E-mail. Google Docs está em
                 desenvolvimento.
               </p>
               <ul className="modules">
@@ -88,7 +95,7 @@ export function App() {
                     </span>
                     <div>
                       <h3>
-                        {module.id === 'programs' || module.id === 'files' ? (
+                        {module.id !== 'docs' ? (
                           <button
                             className="module-link"
                             onClick={() => setModule(module.id)}

@@ -1,0 +1,166 @@
+.mail-module > nav {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.mail-scenario {
+  margin-top: 24px;
+}
+.mail-simulator {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #b9acbf;
+  border-radius: 12px;
+  background: #fff;
+}
+.mail-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #55308f;
+  font-weight: 700;
+}
+.mail-brand > span {
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: #f1e9f5;
+  font-size: 24px;
+}
+.mail-simulator button {
+  padding: 10px 14px;
+  border: 1px solid #b9acbf;
+  border-radius: 8px;
+  background: #fff;
+  color: #241b2a;
+}
+.mail-simulator .primary {
+  background: #55308f;
+  color: #fff;
+}
+.mail-card {
+  max-width: 480px;
+  margin-inline: auto;
+}
+.mail-card h2 {
+  margin-bottom: 12px;
+}
+.mail-field {
+  margin: 16px 0;
+}
+.mail-field label {
+  display: block;
+  margin-bottom: 6px;
+}
+.mail-field input,
+.mail-field textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #86728f;
+  border-radius: 6px;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+}
+.mail-field textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+.mail-field input[aria-invalid='true'] {
+  border: 2px solid #a32143;
+}
+.mail-hint,
+.mail-field p {
+  font-size: 14px;
+  color: #665d6b;
+}
+.mail-field p {
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
+.mail-account {
+  overflow-wrap: anywhere;
+  color: #665d6b;
+}
+.mail-app {
+  display: grid;
+  grid-template-columns: 155px minmax(0, 1fr);
+  gap: 20px;
+}
+.mail-app nav {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.mail-app button[aria-current='page'] {
+  background: #f1e9f5;
+  border: 2px solid #55308f;
+  font-weight: 700;
+}
+.mail-folder ul {
+  list-style: none;
+  padding: 0;
+}
+.mail-folder li {
+  padding: 14px 0;
+  border-bottom: 1px solid #e7dfe9;
+  overflow-wrap: anywhere;
+}
+.mail-folder li p {
+  margin: 8px 0 0;
+}
+.mail-message-body {
+  white-space: pre-wrap;
+}
+.mail-compose {
+  margin-top: 20px;
+  padding: 16px;
+  border: 2px solid #55308f;
+  border-radius: 12px;
+}
+.mail-compose-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mail-compose-title h2 {
+  flex: 1;
+}
+.mail-feedback {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 12px;
+  border: 1px solid #b9acbf;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.mail-feedback.error {
+  border-color: #a32143;
+  color: #85203b;
+  background: #fff2f4;
+}
+.mail-feedback.success {
+  background: #f1e9f5;
+}
+.mail-scenario button:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+@media (max-width: 700px) {
+  .mail-app {
+    grid-template-columns: 1fr;
+  }
+  .mail-app nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .mail-simulator {
+    padding: 16px;
+  }
+}

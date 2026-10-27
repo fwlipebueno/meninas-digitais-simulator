@@ -19,7 +19,7 @@ test('apresenta os quatro módulos, seu estado e acesso por teclado', async ({
   }
   await expect(
     modules.getByText(
-      'Pratique em Programas e Arquivos. E-mail e Google Docs estão em desenvolvimento.',
+      'Pratique em Programas, Arquivos e E-mail. Google Docs está em desenvolvimento.',
     ),
   ).toBeVisible();
   await expect(
