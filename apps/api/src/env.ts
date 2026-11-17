@@ -3,6 +3,10 @@ import { z } from 'zod';
 const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+  CORS_ORIGIN: z
+    .url({ protocol: /^https?$/ })
+    .refine((value) => URL.canParse(value) && new URL(value).origin === value)
+    .optional(),
 });
 
 export function readEnv(source: NodeJS.ProcessEnv) {

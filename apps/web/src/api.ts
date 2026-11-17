@@ -1,5 +1,7 @@
-const API_BASE_URL: string =
-  import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:3001';
+const API_BASE_URL: string = (
+  import.meta.env.VITE_API_URL?.trim() ||
+  (import.meta.env.DEV ? 'http://127.0.0.1:3001' : '')
+).replace(/\/+$/, '');
 const SESSION_STORAGE_KEY = 'meninas-digitais.sessionId';
 let sessionId: string | undefined;
 
@@ -22,6 +24,7 @@ export function getSessionId(): string {
 export async function fetchCompletedActivityIds(
   sessionId: string,
 ): Promise<readonly string[]> {
+  if (!API_BASE_URL) throw new Error('VITE_API_URL ausente na build da web.');
   const response = await fetch(
     `${API_BASE_URL}/progress?sessionId=${encodeURIComponent(sessionId)}`,
   );
@@ -39,6 +42,7 @@ export async function recordCompletion(
   sessionId: string,
   activityId: string,
 ): Promise<void> {
+  if (!API_BASE_URL) throw new Error('VITE_API_URL ausente na build da web.');
   const response = await fetch(`${API_BASE_URL}/completions`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

@@ -18,7 +18,8 @@ export default defineConfig({
   ],
   webServer: {
     command:
-      'npm run preview -w apps/web -- --host 127.0.0.1 --port 4173 --strictPort',
+      'npm run build -w apps/web -- --outDir ../../test-results/web && npm run preview -w apps/web -- --outDir ../../test-results/web --host 127.0.0.1 --port 4173 --strictPort',
+    env: { VITE_API_URL: 'http://127.0.0.1:3001' },
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: false,
   },

@@ -10,6 +10,22 @@ test('aceita uma conexão PostgreSQL e aplica a porta padrão', () => {
   );
 });
 
+test('CORS_ORIGIN aceita somente uma origem HTTP/HTTPS, sem caminho nem credenciais', () => {
+  const DATABASE_URL = 'postgresql://localhost/simulator';
+  expect(
+    readEnv({ DATABASE_URL, CORS_ORIGIN: 'https://frontend.example' })
+      .CORS_ORIGIN,
+  ).toBe('https://frontend.example');
+  for (const CORS_ORIGIN of [
+    '*',
+    'https://frontend.example/',
+    'https://frontend.example/path',
+    'https://user:secret@frontend.example',
+  ]) {
+    expect(() => readEnv({ DATABASE_URL, CORS_ORIGIN })).toThrow('CORS_ORIGIN');
+  }
+});
+
 test.each([
   {},
   { DATABASE_URL: 'https://localhost/simulator' },

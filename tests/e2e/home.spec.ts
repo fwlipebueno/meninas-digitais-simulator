@@ -18,10 +18,14 @@ test('apresenta os quatro módulos, seu estado e acesso por teclado', async ({
     ).toBeVisible();
   }
   await expect(
-    modules.getByText(
-      'Pratique em Programas, Arquivos e E-mail. Google Docs está em desenvolvimento.',
-    ),
+    modules.getByText('Pratique em Programas, Arquivos, E-mail e Google Docs.'),
   ).toBeVisible();
+  for (const name of ['Programas', 'Arquivos', 'E-mail', 'Google Docs']) {
+    await expect(
+      modules.getByRole('button', { name, exact: true }),
+    ).toBeVisible();
+  }
+  await expect(page.getByText(/em desenvolvimento/)).toHaveCount(0);
   await expect(
     page.getByRole('img', { name: 'Meninas Digitais UTFPR-CP' }),
   ).toBeVisible();
