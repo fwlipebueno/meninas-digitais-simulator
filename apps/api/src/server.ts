@@ -16,7 +16,7 @@ try {
   process.exit(1);
 }
 
-const server = createApp(db).listen(env.PORT, () => {
+const server = createApp(db, env.CORS_ORIGIN).listen(env.PORT, () => {
   console.log(`API disponível na porta ${env.PORT}.`);
 });
 

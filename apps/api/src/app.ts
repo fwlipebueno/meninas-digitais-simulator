@@ -14,12 +14,12 @@ const progressQuerySchema = z.strictObject({
   sessionId: z.uuid(),
 });
 
-export function createApp(db: Database) {
+export function createApp(db: Database, corsOrigin?: string) {
   const app = express();
   app.disable('x-powered-by');
 
-  app.use(cors());
-  app.use(express.json({ limit: '4kb' }));
+  app.use(cors(corsOrigin ? { origin: corsOrigin } : undefined));
+  app.use(express.json({ limit: '4kb', inflate: false }));
 
   app.post('/completions', async (req, res) => {
     const parsed = completionSchema.safeParse(req.body);

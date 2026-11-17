@@ -3,6 +3,7 @@ import logo from './assets/meninas-digitais.png';
 import { Programs } from './programs/Programs';
 import { Files } from './files/Files';
 import { Mail } from './mail/Mail';
+import { Docs } from './docs/Docs';
 
 const modules = [
   {
@@ -34,9 +35,9 @@ const modules = [
 ] as const;
 
 export function App() {
-  const [module, setModule] = useState<'programs' | 'files' | 'email' | null>(
-    null,
-  );
+  const [module, setModule] = useState<
+    'programs' | 'files' | 'email' | 'docs' | null
+  >(null);
   return (
     <>
       <a className="skip-link" href="#conteudo">
@@ -58,6 +59,8 @@ export function App() {
           <Files onBack={() => setModule(null)} />
         ) : module === 'email' ? (
           <Mail onBack={() => setModule(null)} />
+        ) : module === 'docs' ? (
+          <Docs onBack={() => setModule(null)} />
         ) : (
           <>
             <div className="intro">
@@ -79,13 +82,10 @@ export function App() {
             <section aria-labelledby="modules-title">
               <div className="section-heading">
                 <h2 id="modules-title">Módulos de aprendizagem</h2>
-                <span className="status">
-                  Programas, Arquivos e E-mail disponíveis
-                </span>
+                <span className="status">Quatro módulos disponíveis</span>
               </div>
               <p className="availability">
-                Pratique em Programas, Arquivos e E-mail. Google Docs está em
-                desenvolvimento.
+                Pratique em Programas, Arquivos, E-mail e Google Docs.
               </p>
               <ul className="modules">
                 {modules.map((module, index) => (
@@ -95,16 +95,12 @@ export function App() {
                     </span>
                     <div>
                       <h3>
-                        {module.id !== 'docs' ? (
-                          <button
-                            className="module-link"
-                            onClick={() => setModule(module.id)}
-                          >
-                            {module.name} <span aria-hidden="true">→</span>
-                          </button>
-                        ) : (
-                          module.name
-                        )}
+                        <button
+                          className="module-link"
+                          onClick={() => setModule(module.id)}
+                        >
+                          {module.name} <span aria-hidden="true">→</span>
+                        </button>
                       </h3>
                       <p>{module.description}</p>
                     </div>
