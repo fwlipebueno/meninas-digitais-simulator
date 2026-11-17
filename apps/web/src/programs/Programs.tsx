@@ -50,9 +50,17 @@ const activityIds = {
 
 export function Programs({ onBack }: { onBack: () => void }) {
   const [screen, setScreen] = useState<Screen>(null);
+  const [performed, setPerformed] = useState<ReadonlySet<Method>>(
+    () => new Set(),
+  );
   const [completed, setCompleted] = useState<ReadonlySet<Activity>>(
     () => new Set(),
   );
+  const methods = screen
+    ? (Object.keys(activities[screen.activity].methods) as Method[])
+    : [];
+  const pending = methods.filter((method) => !performed.has(method));
+  const finalMethod = pending.length === 1 && pending[0] === screen?.method;
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
@@ -94,7 +102,10 @@ export function Programs({ onBack }: { onBack: () => void }) {
             title: activities[activity].title,
             subtitle: Object.values(activities[activity].methods).join(' · '),
           }))}
-          onRepeat={() => setScreen(null)}
+          onRepeat={() => {
+            setPerformed(new Set());
+            setScreen(null);
+          }}
           onBack={onBack}
         />
       );
@@ -102,19 +113,38 @@ export function Programs({ onBack }: { onBack: () => void }) {
       <section className="completion">
         <p className="eyebrow">✓ Programas</p>
         <h1 ref={heading} tabIndex={-1}>
-          Atividade concluída
+          {pending.length ? 'Método realizado' : 'Atividade concluída'}
         </h1>
         <p>{screen.result}</p>
         <div className="program-actions">
           <button
-            onClick={() =>
-              setScreen({ activity: screen.activity, method: screen.method })
-            }
+            onClick={() => {
+              if (!pending.length)
+                setPerformed(
+                  (prev) =>
+                    new Set(
+                      [...prev].filter((method) => !methods.includes(method)),
+                    ),
+                );
+              setScreen({
+                activity: screen.activity,
+                method: pending.length ? screen.method : methods[0]!,
+              });
+            }}
           >
-            Repetir atividade
+            {pending.length ? 'Repetir método' : 'Repetir atividade'}
           </button>
+          {pending.length > 0 && (
+            <button
+              onClick={() =>
+                setScreen({ activity: screen.activity, method: pending[0]! })
+              }
+            >
+              Continuar atividade
+            </button>
+          )}
           <button onClick={() => setScreen(null)}>Voltar à seleção</button>
-          {allDone && (
+          {allDone && pending.length === 0 && (
             <button onClick={() => setScreen({ ...screen, summary: true })}>
               Ver resumo do módulo
             </button>
@@ -152,6 +182,7 @@ export function Programs({ onBack }: { onBack: () => void }) {
                 }
               >
                 {label}
+                {performed.has(method as Method) && ' · ✓ Realizado'}
               </button>
             ),
           )}
@@ -160,18 +191,23 @@ export function Programs({ onBack }: { onBack: () => void }) {
           key={`${screen.activity}-${screen.method}`}
           activity={screen.activity}
           method={screen.method}
+          finalMethod={finalMethod}
           onComplete={(result) => {
-            setCompleted((prev) => {
-              const next = new Set(prev);
-              next.add(screen.activity);
-              return next;
-            });
-            recordCompletion(
-              getSessionId(),
-              activityIds[screen.activity],
-            ).catch((error: unknown) =>
-              console.warn('Conclusão não registrada:', error),
-            );
+            const nextMethods = new Set([...performed, screen.method]);
+            setPerformed(nextMethods);
+            if (finalMethod) {
+              setCompleted((prev) => {
+                const next = new Set(prev);
+                next.add(screen.activity);
+                return next;
+              });
+              recordCompletion(
+                getSessionId(),
+                activityIds[screen.activity],
+              ).catch((error: unknown) =>
+                console.warn('Conclusão não registrada:', error),
+              );
+            }
             setScreen({ ...screen, result });
           }}
         />
@@ -194,18 +230,40 @@ export function Programs({ onBack }: { onBack: () => void }) {
         {Object.entries(activities).map(([activity, info], index) => (
           <button
             key={activity}
-            onClick={() =>
+            onClick={() => {
+              const methods = Object.keys(info.methods) as Method[];
+              const pending = methods.filter(
+                (method) => !performed.has(method),
+              );
+              if (!pending.length)
+                setPerformed(
+                  (prev) =>
+                    new Set(
+                      [...prev].filter((method) => !methods.includes(method)),
+                    ),
+                );
               setScreen({
                 activity: activity as Activity,
-                method: Object.keys(info.methods)[0] as Method,
-              })
-            }
+                method: pending[0] ?? methods[0]!,
+              });
+            }}
           >
             <span className="module-number">0{index + 1}</span>
             <span>
               <strong>{info.title}</strong>
               <span>{Object.values(info.methods).join(' · ')}</span>
-              {completed.has(activity as Activity) && <span>✓ Concluída</span>}
+              <span>
+                Prática atual:{' '}
+                {
+                  Object.keys(info.methods).filter((method) =>
+                    performed.has(method as Method),
+                  ).length
+                }
+                /{Object.keys(info.methods).length} métodos realizados
+              </span>
+              {completed.has(activity as Activity) && (
+                <span>✓ Concluída na sessão</span>
+              )}
             </span>
             <span aria-hidden="true">→</span>
           </button>
