@@ -49,8 +49,10 @@ test('Alternar: Alt + Tab percorre sem ativar até Soltar Alt', async ({
   await expect(
     taskbar.getByRole('button', { name: 'Navegador', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: 'Concluir atividade' }).click();
-  await page.getByRole('button', { name: 'Repetir atividade' }).click();
+  await page
+    .getByRole('button', { name: 'Confirmar método', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Repetir método' }).click();
   await expect(
     taskbar.getByRole('button', { name: 'Bloco de Notas', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true');
@@ -240,8 +242,10 @@ test('Fechar: X encerra a janela e permite repetir', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText(
     'Bloco de Notas fechado',
   );
-  await page.getByRole('button', { name: 'Concluir atividade' }).click();
-  await page.getByRole('button', { name: 'Repetir atividade' }).click();
+  await page
+    .getByRole('button', { name: 'Confirmar método', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Repetir método' }).click();
   await expect(
     page.getByRole('region', { name: 'Janela Bloco de Notas' }),
   ).toBeVisible();
@@ -275,7 +279,7 @@ test('Fechar: Alt + F4 age somente na janela ativa', async ({ page }) => {
   await shortcut.click();
   await expect(page.getByRole('status')).toContainText('Nenhuma janela ativa');
   await expect(
-    page.getByRole('button', { name: 'Concluir atividade' }),
+    page.getByRole('button', { name: 'Confirmar método', exact: true }),
   ).toBeVisible();
 });
 
@@ -381,11 +385,13 @@ test('Abrir: Menu Iniciar, prefixo, resultados e janela maximizada', async ({
   });
   await expect(window).toContainText('Maximizada');
   await expect(window).toBeFocused();
-  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+  await page
+    .getByRole('button', { name: 'Confirmar método', exact: true })
+    .click();
   await expect(
-    page.getByRole('heading', { name: 'Atividade concluída' }),
+    page.getByRole('heading', { name: 'Método realizado' }),
   ).toBeFocused();
-  await page.getByRole('button', { name: 'Repetir atividade' }).click();
+  await page.getByRole('button', { name: 'Repetir método' }).click();
   await expect(window).toHaveCount(0);
   await page.getByRole('button', { name: 'Voltar à seleção' }).click();
   await page.getByRole('button', { name: 'Início' }).click();
@@ -468,59 +474,100 @@ test('Abrir: seleção, duplo clique e controles funcionais do Bloco de Notas', 
   ).toBe(true);
 });
 
+async function performMethod(page: Page, method: string) {
+  const shortcuts = page.getByRole('group', { name: 'Atalhos simulados' });
+  if (method === 'Menu Iniciar' || method === 'Win + S') {
+    if (method === 'Menu Iniciar')
+      await page
+        .getByRole('button', { name: '⊞ Iniciar', exact: true })
+        .click();
+    else
+      await shortcuts
+        .getByRole('button', { name: method, exact: true })
+        .click();
+    await page
+      .getByRole('textbox', { name: 'Pesquisar aplicativos' })
+      .fill('bl');
+    await page
+      .getByRole('textbox', { name: 'Pesquisar aplicativos' })
+      .press('Enter');
+  } else if (method === 'Duplo clique') {
+    await page
+      .getByRole('group', { name: 'Ícones da área de trabalho' })
+      .getByRole('button', { name: 'Bloco de Notas', exact: true })
+      .dblclick();
+  } else if (method === 'Botão X') {
+    await page
+      .getByRole('button', { name: 'Fechar Bloco de Notas', exact: true })
+      .click();
+  } else if (method === 'Alt + F4') {
+    await shortcuts.getByRole('button', { name: method, exact: true }).click();
+  } else if (method === 'Gerenciador de Tarefas') {
+    await shortcuts
+      .getByRole('button', { name: 'Ctrl + Shift + Esc', exact: true })
+      .click();
+    await page.getByRole('radio', { name: /Bloco de Notas/ }).check();
+    await page
+      .getByRole('button', { name: 'Finalizar tarefa', exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: 'Confirmar finalização', exact: true })
+      .click();
+  } else if (method === 'Alt + Tab') {
+    await shortcuts.getByRole('button', { name: method, exact: true }).click();
+    await page.getByRole('button', { name: 'Tab', exact: true }).click();
+    await page.getByRole('button', { name: 'Soltar Alt', exact: true }).click();
+  } else {
+    await shortcuts
+      .getByRole('button', { name: 'Win + Tab', exact: true })
+      .click();
+    await page
+      .getByRole('region', { name: 'Visão de Tarefas', exact: true })
+      .getByRole('button', { name: /Navegador/ })
+      .click();
+  }
+}
+async function finishActivity(page: Page, methods: readonly string[]) {
+  for (const [index, method] of methods.entries()) {
+    await page
+      .getByRole('group', { name: 'Método desta atividade' })
+      .getByRole('button', { name: method, exact: true })
+      .click();
+    await performMethod(page, method);
+    await page
+      .getByRole('button', {
+        name:
+          index === methods.length - 1
+            ? 'Concluir atividade'
+            : 'Confirmar método',
+        exact: true,
+      })
+      .click();
+    if (index < methods.length - 1)
+      await page
+        .getByRole('button', { name: 'Continuar atividade', exact: true })
+        .click();
+  }
+}
+
 test('Módulo: concluir as três atividades de Programas mostra a tela de módulo concluído', async ({
   page,
 }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Programas' }).click();
 
-  await page.getByRole('button', { name: /Abrir um programa/ }).click();
-  await page
-    .getByRole('group', { name: 'Método desta atividade' })
-    .getByRole('button', { name: 'Menu Iniciar', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Iniciar', exact: false })
-    .last()
-    .click();
-  await page.getByRole('textbox', { name: 'Pesquisar aplicativos' }).fill('bl');
-  await page
-    .getByRole('button', { name: /Bloco de Notas.*Melhor correspondência/ })
-    .click();
-  await page.getByRole('button', { name: 'Concluir atividade' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Atividade concluída' }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Voltar à seleção' }).click();
-
-  await page.getByRole('button', { name: /Fechar um programa/ }).click();
-  await page
-    .getByRole('group', { name: 'Método desta atividade' })
-    .getByRole('button', { name: 'Botão X', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Fechar Bloco de Notas', exact: true })
-    .click();
-  await page.getByRole('button', { name: 'Concluir atividade' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Atividade concluída' }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Voltar à seleção' }).click();
-
-  await page.getByRole('button', { name: /Alternar programas/ }).click();
-  await page
-    .getByRole('group', { name: 'Método desta atividade' })
-    .getByRole('button', { name: 'Alt + Tab', exact: true })
-    .click();
-  await page
-    .getByRole('group', { name: 'Atalhos simulados' })
-    .getByRole('button', { name: 'Alt + Tab', exact: true })
-    .click();
-  const selector = page.getByRole('region', { name: 'Seletor Alt + Tab' });
-  const tab = selector.getByRole('button', { name: 'Tab', exact: true });
-  await tab.press('Enter');
-  await selector.getByRole('button', { name: 'Soltar Alt' }).press('Enter');
-  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+  for (const [activity, methods] of [
+    ['Abrir um programa', ['Menu Iniciar', 'Win + S', 'Duplo clique']],
+    ['Fechar um programa', ['Botão X', 'Alt + F4', 'Gerenciador de Tarefas']],
+    ['Alternar programas', ['Alt + Tab', 'Win + Tab']],
+  ] as const) {
+    await page.getByRole('button', { name: new RegExp(activity) }).click();
+    await finishActivity(page, methods);
+    if (activity !== 'Alternar programas')
+      await page
+        .getByRole('button', { name: 'Voltar à seleção', exact: true })
+        .click();
+  }
   await expect(
     page.getByRole('heading', { name: 'Atividade concluída' }),
   ).toBeFocused();
@@ -588,19 +635,7 @@ test('Integração: progresso anterior restaurado e conclusão registrada na API
     page.getByRole('button').filter({ hasText: '✓ Concluída' }),
   ).toHaveCount(2);
   await page.getByRole('button', { name: /Alternar programas/ }).click();
-  await page
-    .getByRole('group', { name: 'Método desta atividade' })
-    .getByRole('button', { name: 'Alt + Tab', exact: true })
-    .click();
-  await page
-    .getByRole('group', { name: 'Atalhos simulados' })
-    .getByRole('button', { name: 'Alt + Tab', exact: true })
-    .click();
-  const selector = page.getByRole('region', { name: 'Seletor Alt + Tab' });
-  const tab = selector.getByRole('button', { name: 'Tab', exact: true });
-  await tab.press('Enter');
-  await selector.getByRole('button', { name: 'Soltar Alt' }).press('Enter');
-  await page.getByRole('button', { name: 'Concluir atividade' }).click();
+  await finishActivity(page, ['Alt + Tab', 'Win + Tab']);
 
   await expect(
     page.getByRole('heading', { name: 'Atividade concluída' }),
@@ -624,4 +659,203 @@ test('Integração: progresso anterior restaurado e conclusão registrada na API
   expect(progressSessionId).toMatch(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
   );
+});
+
+for (const [activity, methods, activityId] of [
+  [
+    'Abrir um programa',
+    ['Menu Iniciar', 'Win + S', 'Duplo clique'],
+    'open-program',
+  ],
+  [
+    'Fechar um programa',
+    ['Botão X', 'Alt + F4', 'Gerenciador de Tarefas'],
+    'close-program',
+  ],
+  ['Alternar programas', ['Alt + Tab', 'Win + Tab'], 'switch-program'],
+] as const) {
+  test(`Todos os métodos: ${activity}, confirmação, navegação e repetição sem conclusão prematura`, async ({
+    page,
+  }) => {
+    const posts: unknown[] = [];
+    await page.route('http://127.0.0.1:3001/**', async (route) => {
+      if (route.request().method() === 'POST') {
+        posts.push(route.request().postDataJSON());
+        await route.fulfill({ json: { ok: true } });
+      } else await route.fulfill({ json: { completedActivityIds: [] } });
+    });
+    await start(page, activity, methods[0]);
+    await expect(
+      page.getByRole('button', { name: /Confirmar método|Concluir atividade/ }),
+    ).toHaveCount(0);
+    await performMethod(page, methods[0]);
+    const picker = page.getByRole('group', { name: 'Método desta atividade' });
+    await picker.getByRole('button', { name: methods[1], exact: true }).click();
+    await picker.getByRole('button', { name: methods[0], exact: true }).click();
+    await expect(picker).not.toContainText('✓ Realizado');
+    expect(posts).toEqual([]);
+    await expect(
+      page.getByRole('button', { name: /Confirmar método|Concluir atividade/ }),
+    ).toHaveCount(0);
+    await performMethod(page, methods[0]);
+    await page
+      .getByRole('button', { name: 'Confirmar método', exact: true })
+      .click();
+    await expect(
+      page.getByRole('heading', { name: 'Método realizado', exact: true }),
+    ).toBeFocused();
+    expect(posts).toEqual([]);
+    await page
+      .getByRole('button', { name: 'Repetir método', exact: true })
+      .click();
+    await expect(picker.getByRole('button', { name: /Realizado/ })).toHaveCount(
+      1,
+    );
+    await expect(
+      page.getByRole('button', { name: /Confirmar método|Concluir atividade/ }),
+    ).toHaveCount(0);
+    await page
+      .getByRole('button', { name: '← Voltar à seleção', exact: true })
+      .click();
+    const entry = page.getByRole('button', { name: new RegExp(activity) });
+    await expect(entry).toContainText(`1/${methods.length} métodos`);
+    await expect(entry).not.toContainText('✓ Concluída');
+    await entry.click();
+    await expect(
+      picker.getByRole('button', { name: methods[1], exact: true }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      picker.getByRole('button', { name: new RegExp('Realizado') }),
+    ).toHaveCount(1);
+    await finishActivity(page, methods.slice(1));
+    await expect(
+      page.getByRole('heading', { name: 'Atividade concluída', exact: true }),
+    ).toBeFocused();
+    await expect
+      .poll(() => posts)
+      .toEqual([{ sessionId: expect.any(String), activityId }]);
+    await page
+      .getByRole('button', { name: 'Repetir atividade', exact: true })
+      .click();
+    await expect(picker).not.toContainText('✓ Realizado');
+    await expect(
+      picker.getByRole('button', { name: methods[0], exact: true }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await picker.getByRole('button', { name: methods[0], exact: true }).click();
+    await performMethod(page, methods[0]);
+    await page
+      .getByRole('button', { name: 'Confirmar método', exact: true })
+      .click();
+    expect(posts).toHaveLength(1);
+    await page
+      .getByRole('button', { name: 'Voltar à seleção', exact: true })
+      .click();
+    await expect(entry).toContainText('✓ Concluída');
+    await page.getByRole('button', { name: '← Início', exact: true }).click();
+    await page.getByRole('button', { name: 'Programas', exact: true }).click();
+    await expect(entry).toContainText(`0/${methods.length} métodos`);
+    expect(posts).toHaveLength(1);
+    expect(await page.pageErrors()).toEqual([]);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  });
+}
+
+test('Auditoria: ordem livre, restauração tardia, método incorreto e repetição não antecipam a API', async ({
+  page,
+}) => {
+  let restore!: () => void;
+  const restored = new Promise<void>((resolve) => {
+    restore = resolve;
+  });
+  const posts: unknown[] = [];
+  await page.route('http://127.0.0.1:3001/**', async (route) => {
+    if (route.request().method() === 'POST') {
+      posts.push(route.request().postDataJSON());
+      await route.fulfill({ json: { ok: true } });
+    } else {
+      await restored;
+      await route.fulfill({ json: { completedActivityIds: ['open-program'] } });
+    }
+  });
+  await start(page, 'Abrir um programa', 'Duplo clique');
+  await performMethod(page, 'Duplo clique');
+  await page
+    .getByRole('button', { name: 'Confirmar método', exact: true })
+    .click();
+  restore();
+  await page
+    .getByRole('button', { name: 'Voltar à seleção', exact: true })
+    .click();
+  const entry = page.getByRole('button', { name: /Abrir um programa/ });
+  await expect(entry).toContainText('✓ Concluída na sessão');
+  await expect(entry).toContainText('Prática atual: 1/3 métodos realizados');
+  expect(posts).toEqual([]);
+  await entry.click();
+  const picker = page.getByRole('group', { name: 'Método desta atividade' });
+  await expect(
+    picker.getByRole('button', { name: 'Menu Iniciar', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  // Abrir com Win + S enquanto Menu Iniciar está selecionado não satisfaz o método.
+  await performMethod(page, 'Win + S');
+  await expect(
+    page.getByRole('button', { name: /Confirmar método|Concluir atividade/ }),
+  ).toHaveCount(0);
+  await picker.getByRole('button', { name: 'Win + S', exact: true }).click();
+  await performMethod(page, 'Win + S');
+  await page
+    .getByRole('button', { name: 'Confirmar método', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Repetir método', exact: true })
+    .click();
+  await expect(picker.getByRole('button', { name: /Realizado/ })).toHaveCount(
+    2,
+  );
+  await expect(
+    picker.getByRole('button', { name: /Duplo clique/ }),
+  ).toContainText('✓ Realizado');
+  await expect(picker.getByRole('button', { name: /Win \+ S/ })).toContainText(
+    '✓ Realizado',
+  );
+  // Abandonar a repetição opcional preserva as duas confirmações.
+  await page
+    .getByRole('button', { name: '← Voltar à seleção', exact: true })
+    .click();
+  await expect(entry).toContainText('Prática atual: 2/3 métodos realizados');
+  expect(posts).toEqual([]);
+  await entry.click();
+  // Confirmar novamente um método realizado não substitui o que falta.
+  await picker.getByRole('button', { name: /Duplo clique/ }).click();
+  await performMethod(page, 'Duplo clique');
+  await page
+    .getByRole('button', { name: 'Confirmar método', exact: true })
+    .click();
+  expect(posts).toEqual([]);
+  await page
+    .getByRole('button', { name: 'Continuar atividade', exact: true })
+    .click();
+  await expect(
+    picker.getByRole('button', { name: 'Menu Iniciar', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await performMethod(page, 'Menu Iniciar');
+  await page
+    .getByRole('button', { name: 'Concluir atividade', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Atividade concluída', exact: true }),
+  ).toBeFocused();
+  await expect(
+    page.getByText('Você abriu o Bloco de Notas.', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Experimente também os outros métodos/),
+  ).toHaveCount(0);
+  await expect
+    .poll(() => posts)
+    .toEqual([{ sessionId: expect.any(String), activityId: 'open-program' }]);
+  expect(await page.pageErrors()).toEqual([]);
 });

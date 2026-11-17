@@ -27,10 +27,12 @@ export function ProgramSimulation({
   activity,
   method,
   onComplete,
+  finalMethod,
 }: {
   activity: Activity;
   method: Method;
   onComplete: (result: string) => void;
+  finalMethod: boolean;
 }) {
   const [windows, setWindows] = useState<OpenWindow[]>(() => {
     if (activity === 'open') return [];
@@ -87,9 +89,7 @@ export function ProgramSimulation({
     setOverlay(null);
     setFeedback(`${programs[id].name} aberto em uma janela maximizada.`);
     if (activity === 'open' && id === 'notepad' && source === method)
-      setResult(
-        'Você abriu o Bloco de Notas. Experimente também os outros métodos.',
-      );
+      setResult('Você abriu o Bloco de Notas.');
   }
   function close(id: ProgramId, source: Method) {
     function removeWindow() {
@@ -143,7 +143,7 @@ export function ProgramSimulation({
         </details>
         {result && (
           <button className="primary" onClick={() => onComplete(result)}>
-            Concluir atividade
+            {finalMethod ? 'Concluir atividade' : 'Confirmar método'}
           </button>
         )}
       </aside>

@@ -1,4 +1,47 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+async function completeClose(page: Page) {
+  for (const method of ['Botão X', 'Alt + F4', 'Gerenciador de Tarefas']) {
+    await page
+      .getByRole('group', { name: 'Método desta atividade' })
+      .getByRole('button', { name: method, exact: true })
+      .click();
+    if (method === 'Botão X')
+      await page
+        .getByRole('button', { name: 'Fechar Bloco de Notas', exact: true })
+        .click();
+    else if (method === 'Alt + F4')
+      await page
+        .getByRole('group', { name: 'Atalhos simulados' })
+        .getByRole('button', { name: method, exact: true })
+        .click();
+    else {
+      await page
+        .getByRole('button', { name: 'Ctrl + Shift + Esc', exact: true })
+        .click();
+      await page.getByRole('radio', { name: /Bloco de Notas/ }).check();
+      await page
+        .getByRole('button', { name: 'Finalizar tarefa', exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: 'Confirmar finalização', exact: true })
+        .click();
+    }
+    await page
+      .getByRole('button', {
+        name:
+          method === 'Gerenciador de Tarefas'
+            ? 'Concluir atividade'
+            : 'Confirmar método',
+        exact: true,
+      })
+      .click();
+    if (method !== 'Gerenciador de Tarefas')
+      await page
+        .getByRole('button', { name: 'Continuar atividade', exact: true })
+        .click();
+  }
+}
 
 for (const module of ['Programas', 'Arquivos']) {
   test(`Progresso completo restaurado em ${module} permanece repetível`, async ({
@@ -22,6 +65,13 @@ for (const module of ['Programas', 'Arquivos']) {
     await page.goto('/');
     await page.getByRole('button', { name: module, exact: true }).click();
     const count = module === 'Programas' ? 3 : 4;
+    if (module === 'Programas') {
+      const entry = page.getByRole('button', { name: /Fechar um programa/ });
+      await expect(entry).toContainText('✓ Concluída na sessão');
+      await expect(entry).toContainText(
+        'Prática atual: 0/3 métodos realizados',
+      );
+    }
     await expect(
       page.getByRole('button').filter({ hasText: '✓ Concluída' }),
     ).toHaveCount(count);
@@ -29,17 +79,15 @@ for (const module of ['Programas', 'Arquivos']) {
       module === 'Programas' ? 'Fechar um programa' : 'Criar um documento';
     await page.getByRole('button', { name: new RegExp(activity) }).click();
     for (let repetition = 0; repetition < 2; repetition++) {
-      if (module === 'Programas')
-        await page
-          .getByRole('button', { name: 'Fechar Bloco de Notas', exact: true })
-          .click();
+      if (module === 'Programas') await completeClose(page);
       else {
         await page
           .getByRole('button', { name: 'Arquivo', exact: true })
           .click();
         await page.getByRole('button', { name: 'Novo', exact: true }).click();
       }
-      await page.getByRole('button', { name: 'Concluir atividade' }).click();
+      if (module === 'Arquivos')
+        await page.getByRole('button', { name: 'Concluir atividade' }).click();
       await expect(
         page.getByRole('heading', { name: 'Atividade concluída' }),
       ).toBeFocused();
@@ -101,17 +149,17 @@ for (const failure of ['read', 'write'] as const) {
         module === 'Programas' ? 'Fechar um programa' : 'Criar um documento';
       await page.getByRole('button', { name: new RegExp(activity) }).click();
       for (let repetition = 0; repetition < 2; repetition++) {
-        if (module === 'Programas')
-          await page
-            .getByRole('button', { name: 'Fechar Bloco de Notas', exact: true })
-            .click();
+        if (module === 'Programas') await completeClose(page);
         else {
           await page
             .getByRole('button', { name: 'Arquivo', exact: true })
             .click();
           await page.getByRole('button', { name: 'Novo', exact: true }).click();
         }
-        await page.getByRole('button', { name: 'Concluir atividade' }).click();
+        if (module === 'Arquivos')
+          await page
+            .getByRole('button', { name: 'Concluir atividade' })
+            .click();
         await expect(
           page.getByRole('heading', { name: 'Atividade concluída' }),
         ).toBeFocused();
