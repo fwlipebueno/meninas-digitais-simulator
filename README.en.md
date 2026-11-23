@@ -10,9 +10,11 @@ The planned activities follow **instruction → participant action → validatio
 
 ## Current status
 
+Production: [Web](https://meninas-digitais-simulator-web.onrender.com) on Render Static Site; [API](https://meninas-digitais-simulator-api.onrender.com/health) on Render Web Service Free; PostgreSQL on Neon. Version validated in production: `7fcac5ac` (PR #6).
+
 The **PB-04** foundation provides the development environment, tests and CI. **Increment 1 — Programs (RF-01 through RF-21)** supports opening, closing and switching programs, with instructions, feedback, repetition and return to activity selection. **Increment 2 — Files (RF-22 through RF-30)** is available for creating, saving, renaming and deleting files. **Increment 3 — Email (RF-31 through RF-45)** is available for creating accounts, signing in, composing, sending and discarding simulated messages. **Increment 4 — Google Docs (RF-46 through RF-75)** provides four guided activities: exploring the interface, inserting elements, exporting and using editor tools. The interface preserves the validated prototype's colors and logo. The web app already integrates with the API to record and restore activity progress per anonymous session.
 
-Reserved computer shortcuts are taught through controls within the page. Window state is local and resets when changing methods, repeating or leaving an activity. In Programs, Notepad supports minimizing, maximizing, restoring and closing. In Files, the document and saved file exist only in the activity state; repeating or leaving discards them. In Email, created accounts stay only in memory while the module is open; leaving it or reloading discards accounts. Messages and drafts exist only within the activity and are discarded when repeating or leaving it. Registration checks username availability and passwords with at least 8 characters, letters and numbers; password fields are always masked. Progress is recorded only when clicking “Concluir atividade” after reaching the objective. In Google Docs, documents, inserted elements and sharing exist only within the activity and are discarded when repeating or leaving it. Export creates a representation in simulated Downloads, without a real download. Search counts matches in the content and the table of contents derives from applied headings. Insertions use guided cursor positions without free editing. The minimum zoom is 90% (14.4px), preserving RNF-06 readability. Each activity keeps its individual completion screen, repetition and return to selection. Once all activities are completed, “Ver resumo do módulo” opens an additional summary. Repeating an activity or module never clears completions; selection marks completed activities. The API stores progress (which activities were completed) per anonymous session, but does not write, download or persist files, accounts or other real data.
+Reserved computer shortcuts are taught through controls within the page. Window state is local and resets when changing methods, repeating or leaving an activity. In Programs, Notepad supports minimizing, maximizing, restoring and closing. Completion requires correctly executing and confirming all 8 methods: Start Menu, Win + S and Double click for Open; X button, Alt + F4 and Task Manager for Close; Alt + Tab and Win + Tab for Switch. Only confirmation of the last method records the activity in the API. Repeating a method preserves confirmations; repeating an activity resets practice without clearing the session completion. Partial method progress is volatile and discarded when leaving the module or reloading. In Files, the document and saved file exist only in the activity state; repeating or leaving discards them. In Email, created accounts stay only in memory while the module is open; leaving it or reloading discards accounts. Messages and drafts exist only within the activity and are discarded when repeating or leaving it. Registration checks username availability and passwords with at least 8 characters, letters and numbers; password fields are always masked. Progress is recorded only when clicking “Concluir atividade” after reaching the objective. In Google Docs, documents, inserted elements and sharing exist only within the activity and are discarded when repeating or leaving it. Export creates a representation in simulated Downloads, without a real download. Search counts matches in the content and the table of contents derives from applied headings. Insertions use guided cursor positions without free editing. The minimum zoom is 90% (14.4px), preserving RNF-06 readability. Each activity keeps its individual completion screen, repetition and return to selection. Once all activities are completed, “Ver resumo do módulo” opens an additional summary. Repeating an activity or module never clears completions; selection marks completed activities. The API stores progress (which activities were completed) per anonymous session, but does not write, download or persist files, accounts or other real data.
 
 | Planned module     | Content                                                                            | Requirements        |
 | ------------------ | ---------------------------------------------------------------------------------- | ------------------- |
@@ -23,7 +25,7 @@ Reserved computer shortcuts are taught through controls within the page. Window 
 
 The API exposes `GET /health` (returns `200` with `{"status":"ok"}`), `GET /progress?sessionId=<uuid>` (returns `{"completedActivityIds":[...]}`, the activities already completed in the session) and `POST /completions` (records a completion; takes `{"sessionId":"<uuid>","activityId":"<id>"}` and is idempotent). Invalid identifiers or additional fields return `400`; JSON bodies are limited to 4kb; compressed JSON is rejected with `415`. CORS accepts the exact origin configured in `CORS_ORIGIN`; when omitted, it stays open for development and tests. The home page does not depend on the API: if it is unavailable, the simulator keeps working, only without restoring or recording progress.
 
-The data model is defined in `apps/api/src/schema.ts` (Drizzle), with three tables: `training_session` (anonymous session, `id` UUID), `activity` (catalog, `id` text) and `activity_completion` (completions, composite key `sessionId` + `activityId`). `db:seed` populates 14 activities across the four modules. The UUID is kept in `sessionStorage`, preserved across tab reloads; if storage fails, one UUID stays in memory while the page is in use. The database session is created on the first recorded completion. There is no real authentication, personal data persistence or real external integration. Publication on Render + Neon is prepared but has not been performed.
+The data model is defined in `apps/api/src/schema.ts` (Drizzle), with three tables: `training_session` (anonymous session, `id` UUID), `activity` (catalog, `id` text) and `activity_completion` (completions, composite key `sessionId` + `activityId`). `db:seed` populates 14 activities across the four modules. The UUID is kept in `sessionStorage`, preserved across tab reloads; if storage fails, one UUID stays in memory while the page is in use. The database session is created on the first recorded completion. There is no real authentication, personal data persistence or real external integration. The application is hosted on Render + Neon.
 
 ### Development requirements
 
@@ -80,16 +82,18 @@ If the API fails to start, check the Docker service, ports and `DATABASE_URL`. Y
 
 ### Environment variables
 
-The API reads the root `.env` when present and also accepts process environment variables without a file. Variables already defined in the process take precedence. Zod validates `PORT` and `DATABASE_URL` before connecting, without displaying credentials in errors. The web app receives no credentials; it accepts `VITE_API_URL` (read at build time by Vite) to point to the API. The `http://127.0.0.1:3001` default exists only in the development server. A production build without this variable keeps activities available locally without progress requests; the console reports the missing configuration. The build does not fail. Set `VITE_API_URL` in the process starting Vite or in `apps/web/.env.local`; Vite does not read the root `.env`. Never use `VITE_*` variables for credentials.
+The API loads the root `.env` when present, but the file is not versioned; it also works with process environment variables alone. Variables already defined in the process take precedence. Zod validates `PORT` and `DATABASE_URL` before connecting, without displaying credentials in errors. The web app receives no credentials; it accepts `VITE_API_URL` (read at build time by Vite) to point to the API. The `http://127.0.0.1:3001` default exists only in the development server. A production build without this variable keeps activities available locally without progress requests; the console reports the missing configuration. The build does not fail. Set `VITE_API_URL` in the process starting Vite or in `apps/web/.env.local`; Vite does not read the root `.env`. Never use `VITE_*` variables for credentials.
 
-| Variable            | Purpose / example value                                                                             |
-| ------------------- | --------------------------------------------------------------------------------------------------- |
-| `PORT`              | API HTTP port; defaults to `3001`, integer from 1 to 65535                                          |
-| `DATABASE_URL`      | Required PostgreSQL connection: `postgresql://simulator:local-development@localhost:5433/simulator` |
-| `POSTGRES_USER`     | User created by Compose: `simulator`                                                                |
-| `POSTGRES_PASSWORD` | Example local password: `local-development`                                                         |
-| `POSTGRES_DB`       | Database created by Compose: `simulator`                                                            |
-| `VITE_API_URL`      | Web: API base URL; required for progress in production builds                                       |
+| Variable            | Purpose / example value                                                                                    |
+| ------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `PORT`              | API HTTP port; defaults to `3001`, integer from 1 to 65535                                                 |
+| `NODE_ENV`          | Render API: `production`                                                                                   |
+| `CORS_ORIGIN`       | Render API: `https://meninas-digitais-simulator-web.onrender.com`, without a trailing slash                |
+| `DATABASE_URL`      | Required PostgreSQL connection: `postgresql://simulator:local-development@localhost:5433/simulator`        |
+| `POSTGRES_USER`     | User created by Compose: `simulator`                                                                       |
+| `POSTGRES_PASSWORD` | Example local password: `local-development`                                                                |
+| `POSTGRES_DB`       | Database created by Compose: `simulator`                                                                   |
+| `VITE_API_URL`      | Web: API base URL; in production, `https://meninas-digitais-simulator-api.onrender.com`, set at build time |
 
 When changing the user, password or database, update `DATABASE_URL` as well. The `POSTGRES_*` variables initialize a new volume; changing them does not update credentials in an existing volume. `.env` is not versioned.
 
@@ -141,7 +145,7 @@ Wait for `pg_isready` to report readiness and set `TEST_DATABASE_URL=postgresql:
 
 The `CI` workflow runs `npm ci`, `npm run check` and the integration test against ephemeral PostgreSQL on pull requests and pushes to `main`. Tags matching `v*` undergo the same validation and publish `web-<tag>` and `api-<tag>` artifacts in the workflow itself. Smoke test failures retain the report for diagnosis.
 
-The web artifact contains static files. The API artifact includes compiled JavaScript, migrations in `apps/api/drizzle/`, manifests, lockfile and an example environment. After extracting it, configure process variables or the root `.env` and run `npm ci --workspace apps/api --omit=dev`. With PostgreSQL accessible, run `npm run db:migrate:built -w apps/api` and `npm run db:seed:built -w apps/api` before `npm start -w apps/api`. The migration path is relative to the code, independent of the working directory. It includes neither installed dependencies nor secrets. There is no automatic deployment; Render + Neon configuration is described below.
+The web artifact contains static files. The API artifact includes compiled JavaScript, migrations in `apps/api/drizzle/`, manifests, lockfile and an example environment. After extracting it, configure process variables or the root `.env` and run `npm ci --workspace apps/api --omit=dev`. With PostgreSQL accessible, run `npm run db:migrate:built -w apps/api` and `npm run db:seed:built -w apps/api` before `npm start -w apps/api`. The migration path is relative to the code, independent of the working directory. It includes neither installed dependencies nor secrets. The workflow does not deploy. The Render services track `main` with auto-deploy enabled, but this does not guarantee automatic publication in every case: PR #6 required a manual trigger.
 
 ## Contributing
 
@@ -154,15 +158,13 @@ Keep branches and PRs small, follow Conventional Commits for commit messages, an
 - Samuel Ueno Fernandes
 - Antonio Carlos Ferreira
 
-## Final deployment — Render + Render + Neon
+## Production — Render + Neon
 
-**Ready for configuration; not published.** No service, public URL or external smoke test was created or verified in this step.
-
-Order: provision Neon Free, prepare its new database, register the API (Render Web Service Free) and web (Render Static Site), configure their actual assigned origins, then publish after review/PR/CI/merge. Update both configurations with their actual URLs before the final smoke test.
+The static frontend calls the API over HTTPS; only the backend accesses PostgreSQL on Neon. Both Render services use the repository root, with no additional root directory.
 
 | Service | Root directory                | Build command                                       | Start / publish                    |
 | ------- | ----------------------------- | --------------------------------------------------- | ---------------------------------- |
-| API     | repository root (leave blank) | `npm ci --include=dev && npm run build -w apps/api` | `npm start -w apps/api`            |
+| API     | repository root (leave blank) | `npm ci --include=dev && npm run build -w apps/api` | migrations + seed + start (below)  |
 | Web     | repository root (leave blank) | `npm ci --include=dev && npm run build -w apps/web` | Publish directory: `apps/web/dist` |
 
 Use Node 24.x per `.nvmrc` and npm 11.x per `package.json`. Production does not require Docker. The compiled API uses production dependencies only; its artifact must retain `apps/api/dist`, `apps/api/drizzle` and workspace manifests/lockfile.
@@ -171,16 +173,17 @@ Use Node 24.x per `.nvmrc` and npm 11.x per `package.json`. Production does not 
 - **API:** set `NODE_ENV=production` and use the platform's `PORT`, not a fixed production port. The existing listener without an explicit HOST accepts external IPv4 connections on dual-stack systems, verified by a local smoke test. Set `CORS_ORIGIN` to the exact HTTPS web origin, without a path or trailing slash. CORS does not authenticate clients. Health path `/health` checks the process, not a fresh database query on each request.
 - **Web:** set `VITE_API_URL` to the actual absolute HTTPS API URL **at build time**. Do not append `/api`; endpoints are at the root. Trailing slashes are normalized. Changing this value requires rebuilding. Never put database credentials or secrets in `VITE_*` variables.
 
-Before the first release, use a controlled terminal to verify and set process `DATABASE_URL` to the **intended new database**, avoiding accidental reuse of development or another environment. After building the API, run once:
+The startup command configured on Render runs compiled migrations and seed before starting the API:
 
 ```sh
-npm run db:migrate:built -w apps/api
-npm run db:seed:built -w apps/api
+npm run db:migrate:built -w apps/api && npm run db:seed:built -w apps/api && npm start -w apps/api
 ```
 
-These scripts are idempotent and are not part of normal startup. Production execution requires separate authorization. Local `.env` remains ignored and process variables take precedence. Set `CORS_ORIGIN` in production to restrict browser access to the published frontend; omitting it retains open development CORS.
+Migrations and seed are idempotent; if any step fails, the API does not start. The standalone `npm start -w apps/api` script only starts the server. The API loads the root `.env` when present; Git ignores this file, and process environment variables take precedence. In production, `CORS_ORIGIN` restricts browser access to the published frontend origin; omitting it retains open CORS.
 
-Post-deployment smoke test: `/health` returns 200; web opens all four modules; reaching an objective sends no POST until Concluir is clicked; verify POST `/completions`, leave/re-enter and check GET `/progress` restoring the completion. Check JSON OPTIONS/preflight across both origins and absence of CORS errors. Repeat with an unavailable API and blocked storage: local training must remain usable. After free API hibernation, verify recording/restoration again; network cold start is separate from the 500 ms local interaction target. No client-side routes exist, so no SPA rewrite is needed.
+The technical Playwright/Chromium E2E run in production on November 17, 2026 passed all 8 Programs methods, repetition and navigation, with no premature POST. One new anonymous session received exactly 3 distinct completions, with HTTP 200 responses, restored through GET `/progress` after reloading. No unexpected console or network errors occurred. This run does not constitute usability testing with students or formal acceptance of all NFRs. API unavailability and blocked storage are covered by local E2E tests with simulated responses, not by this production run.
+
+The free API service may spin down; the first request can take longer while it starts. During validation, the initial `/health` call returned 200 after 42.7 seconds. Network/startup time is separate from the 500 ms local interaction target. Training remains usable if the API is unavailable, without guaranteed progress recording/restoration during that interval. No client-side routes exist, so no SPA rewrite is needed.
 
 Operational references: [Render Web Services](https://render.com/docs/web-services), [Render Static Sites](https://render.com/docs/static-sites), [node-postgres TLS](https://node-postgres.com/features/ssl), [Neon connections](https://neon.com/docs/connect/connect-from-any-app).
 
